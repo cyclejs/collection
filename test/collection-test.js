@@ -33,7 +33,7 @@ function TodoList ({DOM, props$}) {
   });
 
   const initialState = {
-    todos: todos.items
+    todos
   };
 
   const newTodoText$ = DOM

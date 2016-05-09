@@ -31,34 +31,32 @@ function makeItem (component, sources, props) {
 
 export default function Collection (component, sources, handlers = {}, items = [], action$ = new Subject) {
   return {
-    items: {
-      add (props) {
-        const newItem = makeItem(component, sources, props);
+    add (props) {
+      const newItem = makeItem(component, sources, props);
 
-        registerHandlers(newItem, handlers, action$);
+      registerHandlers(newItem, handlers, action$);
 
-        return Collection(
-          component,
-          sources,
-          handlers,
-          [...items, newItem],
-          action$
-        ).items
-      },
+      return Collection(
+        component,
+        sources,
+        handlers,
+        [...items, newItem],
+        action$
+      )
+    },
 
-      remove (itemForRemoval) {
-        return Collection(
-          component,
-          sources,
-          handlers,
-          items.filter(item => item.id !== itemForRemoval.id),
-          action$
-        ).items
-      },
+    remove (itemForRemoval) {
+      return Collection(
+        component,
+        sources,
+        handlers,
+        items.filter(item => item.id !== itemForRemoval.id),
+        action$
+      )
+    },
 
-      asArray () {
-        return items;
-      }
+    asArray () {
+      return items;
     },
 
     action$: action$.asObservable()

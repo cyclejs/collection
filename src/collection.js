@@ -1,4 +1,4 @@
-import {Subject} from 'rx';
+import {Subject, Observable} from 'rx';
 import isolate from '@cycle/isolate';
 
 let _id = 0;
@@ -7,16 +7,19 @@ function id() {
   return _id++;
 };
 
-function registerHandlers(item, handlers, action$) {
-  for (let sink in item) {
-    if (sink in handlers) {
-      const handler = handlers[sink];
-
-      item[sink].subscribe(event => action$.onNext(
-        (state) => handler(state, {item, event})
-      ))
+function handlerStreams (item, handlers) {
+  const sinkStreams = Object.keys(item).map(sink => {
+    if (handlers[sink] === undefined) {
+      return null;
     }
-  }
+
+    const handler = handlers[sink];
+    const sink$ = item[sink];
+
+    return sink$.map(event => (state) => handler(state, {item, event}));
+  });
+
+  return Observable.merge(...sinkStreams.filter(action => action !== null));
 }
 
 function makeItem (component, sources, props) {
@@ -34,7 +37,7 @@ export default function Collection (component, sources, handlers = {}, items = [
     add (props) {
       const newItem = makeItem(component, sources, props);
 
-      registerHandlers(newItem, handlers, action$);
+      handlerStreams(newItem, handlers).subscribe(action$);
 
       return Collection(
         component,

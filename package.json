@@ -4,8 +4,30 @@
   "description": "Manage a collection of item in your dataflow component",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "start": "babel-node server.js",
+    "test": "mocha --compilers js:babel-register",
+    "autotest": "mocha --compilers js:babel-register --watch -R Min",
+    "bundle": "browserify index.js -t babelify -t uglifyify -o bundle.js"
   },
   "author": "Nick Johnstone",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@cycle/core": "^6.0.0-rc2",
+    "@cycle/dom": "^9.0.1",
+    "@cycle/isolate": "^1.2.0",
+    "babel-preset-es2015": "^6.1.18",
+    "cycle-restart": "0.0.14",
+    "rx": "^4.0.7"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.2.0",
+    "babel-core": "^6.2.1",
+    "babel-plugin-transform-object-rest-spread": "^6.8.0",
+    "babelify": "^7.2.0",
+    "browserify": "^12.0.1",
+    "browserify-hmr": "^0.3.1",
+    "budo": "^6.1.0",
+    "mocha": "^2.4.5",
+    "uglifyify": "^3.0.1"
+  }
 }

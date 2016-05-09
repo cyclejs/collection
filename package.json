@@ -1,0 +1,11 @@
+{
+  "name": "cycle-collections",
+  "version": "1.0.0",
+  "description": "Manage a collection of item in your dataflow component",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "Nick Johnstone",
+  "license": "MIT"
+}

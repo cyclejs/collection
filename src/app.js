@@ -21,12 +21,18 @@ function Friend ({DOM, props$}) {
 }
 
 function addFriend (name) {
-  return (state) => ({...state, friends: state.friends.add({name})});
+  return function addFriendInner (state) {
+    return {
+      ...state,
+
+      friends: state.friends.add({name})
+    }
+  };
 }
 
 function FriendsList ({DOM}) {
   const friends = Collection(Friend, {DOM}, {
-    dismiss$: function (state, dismissedFriend, event) {
+    dismiss$: function dismiss (state, dismissedFriend, event) {
       return {
         ...state,
 

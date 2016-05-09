@@ -7,7 +7,7 @@ function id() {
   return _id++;
 };
 
-function handlerStreams (item, handlers) {
+function handlerStreams (component, item, handlers) {
   const sinkStreams = Object.keys(item).map(sink => {
     if (handlers[sink] === undefined) {
       return null;
@@ -16,7 +16,19 @@ function handlerStreams (item, handlers) {
     const handler = handlers[sink];
     const sink$ = item[sink];
 
-    return sink$.map(event => (state) => handler(state, item, event));
+    return sink$.map(event => {
+      const handlerAction = (state) => handler(state, item, event);
+
+      Object.defineProperty(
+        handlerAction,
+        'name',
+        {
+          value: component.name + '(' + item.id + ')' + sink
+        }
+      );
+
+      return handlerAction;
+    });
   });
 
   return Observable.merge(...sinkStreams.filter(action => action !== null));
@@ -41,7 +53,7 @@ export default function Collection (component, sources, handlers = {}, items = [
     add (props) {
       const newItem = makeItem(component, sources, props);
 
-      handlerStreams(newItem, handlers).subscribe((action) => action$.onNext(action));
+      handlerStreams(component, newItem, handlers).subscribe((action) => action$.onNext(action));
 
       return Collection(
         component,

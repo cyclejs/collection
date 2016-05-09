@@ -1,53 +1,78 @@
-# cycle-hot-reloading-example
-A Cycle.js starter project with hot reloading using browserify and browserify-hmr.
+# cycle-collections
+An easier way to do collections in Cycle
 
-Usage
+Collection components, like todo lists and feeds, are one of the weakest points of Cycle's architecture currently.
+
+Consider a TodoItem in a TodoList. It might have a remove button, and surely the whole point of isolation is that the TodoItem can select it's own remove button and click events. What happens when remove is clicked?
+
+The current idiom involves having the components return a stream of actions, that are manually hooked up using a subject to the main stream of actions in the application.
+
+cycle-collections provides a Collection helper function, to mask the subject and ease the pain of common actions like adding, removing and updating child components. It's designed to be used in any dataflow component that has children.
+
+
+Installation
 ---
 
-To get set up:
+Coming soon to an npm near you...
 
-```bash
-git clone https://github.com/Widdershin/cycle-hot-reloading-example.git
-cd cycle-hot-reloading-example
-npm install
-npm start
-```
-
-You should then be able to visit localhost:8000 and you'll see the text 'Change me!'.
-
-You can then go into `src/app.js` and change that text, and you should see the result straight away without the page reloading.
-
-You can also change the styles in `styles.css` and it will live reload.
-
-This is made possible by [AgentME/browserify-hmr](http://www.github.com/AgentME/browserify-hmr), along with mattdesl's excellent [budo](http://www.github.com/mattdesl/budo) development server. All of the hot reloading configuration is done in `index.js`. The key part is that the old Cycle application is diposed every time the code changes.
-
-
-Deployment
+Example
 ---
 
-To get your project online, if you don't need a backend server, you can deploy to Github pages.
+```js
+import {run} from '@cycle/core';
+import {makeDOMDriver, div, button} from '@cycle/dom';
+import Collection from 'cycle-collections';
 
-Note: if you cloned this repo directly, you will first need to [create a new repo](https://github.com/new). Since you're uploading an existing repo, don't add a README, license or .gitignore. Then follow the instructions to add your new repo as the remote. You will need to `git remote rm origin` beforehand.
+function Friend ({DOM, props$}) {
+  const dismiss$ = DOM
+    .select('.dismiss')
+    .events('click');
 
-To deploy for the first time, we need to set up a `gh-pages` branch:
+  return {
+    DOM: props$.map(props => (
+      div('.friend', [
+        JSON.stringify(props),
+        button('.dismiss', 'x')
+      ])
+    ),
 
-```bash
-git checkout -b gh-pages
-npm run bundle
-git add .
-git commit -m "Add bundled app"
-git push origin gh-pages
-```
+    dismiss$
+  }
+}
 
-Then visit http://**username**.github.io/**repository**. Your site should be online within 5 minutes or so.
+function FriendsList ({DOM}) {
+  const friends = Collection(Friend, {DOM}, {
+    dismiss$: function (state, dismissedFriend) => {
+      return {
+        ...state,
 
-To update your site in future, just checkout back to the branch and repeat the process:
-```bash
-git checkout gh-pages
-git merge master --no-edit
-npm run bundle
-git add .
-git commit -m "Update bundle"
-git push origin gh-pages
+        friends: state.friends.remove(dismissedFriend)
+      }
+    }
+  })
+
+  const initialState = {
+    friends
+  }
+
+  const addStartingFriend$ = Observable.just(
+    (state) => ({...state, friends: state.friends.add({props$: Observable.just({name: 'test'})})})
+  );
+
+  const action$ = Observable.merge(
+    addStartingFriend$,
+    friends.action$
+  )
+
+  const state$ = action$
+    .startWith(initialState)
+    .scan((state, action) => action(state));
+
+  return {
+    DOM: state$.map(state => (
+      div('.friends', state.friends.asArray().map(friend => friend.DOM))
+    )
+  }
+}
 ```
 

@@ -23,7 +23,7 @@ function addTodo (title) {
 
 function TodoList ({DOM, props$}) {
   const todos = Collection(TodoItem, {DOM}, {
-    remove$: (state, {item}) => {
+    remove$: (state, item) => {
       return {
         ...state,
 

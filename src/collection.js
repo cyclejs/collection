@@ -16,7 +16,7 @@ function handlerStreams (item, handlers) {
     const handler = handlers[sink];
     const sink$ = item[sink];
 
-    return sink$.map(event => (state) => handler(state, {item, event}));
+    return sink$.map(event => (state) => handler(state, item, event));
   });
 
   return Observable.merge(...sinkStreams.filter(action => action !== null));

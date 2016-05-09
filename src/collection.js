@@ -41,7 +41,7 @@ export default function Collection (component, sources, handlers = {}, items = [
     add (props) {
       const newItem = makeItem(component, sources, props);
 
-      handlerStreams(newItem, handlers).subscribe(action$);
+      handlerStreams(newItem, handlers).subscribe((action) => action$.onNext(action));
 
       return Collection(
         component,

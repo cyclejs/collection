@@ -148,4 +148,50 @@ describe('Collection', () => {
 
     collectionAssert.assertEqual(expected, results.messages);
   });
+
+  it('removes the right item', () => {
+    const scheduler = new Rx.TestScheduler();
+
+    const add$ = scheduler.createHotObservable(
+      onNext(250, 'click!'),
+      onNext(260, 'click!'),
+      onNext(270, 'click!')
+    );
+
+    const todoText$ = scheduler.createHotObservable(
+      onNext(230, {target: {value: 'first'}}),
+      onNext(255, {target: {value: 'second'}}),
+      onNext(265, {target: {value: 'third'}})
+    );
+
+    const remove$ = scheduler.createHotObservable(
+      onNext(300, 'click!')
+    );
+
+    const mockedDOM = mockDOMSource({
+      '.add-todo': {click: add$},
+      '.new-todo': {change: todoText$},
+      '.cycle-scope-4': {
+        '.remove': {click: remove$}
+      },
+    });
+
+    const results = scheduler.startScheduler(() => {
+      return TodoList({DOM: mockedDOM})
+        .state$
+        .pluck('todos')
+        .flatMap(todos => Observable.combineLatest(
+          ...todos.asArray().map(todo => todo.state$)
+        ), (_, todos) => todos.map(todo => todo.title));
+    });
+
+    const expected = [
+      onNext(250, ["first"]),
+      onNext(260, ["first", "second"]),
+      onNext(270, ["first", "second", "third"]),
+      onNext(300, ["first", "third"])
+    ];
+
+    collectionAssert.assertEqual(expected, results.messages);
+  });
 });

@@ -56,7 +56,7 @@ function FriendsList ({DOM}) {
   }
 
   const addStartingFriend$ = Observable.just(
-    (state) => ({...state, friends: state.friends.add({props$: Observable.just({name: 'test'})})})
+    (state) => ({...state, friends: state.friends.add({name: 'test'})})
   );
 
   const action$ = Observable.merge(

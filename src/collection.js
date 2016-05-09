@@ -25,7 +25,11 @@ function handlerStreams (item, handlers) {
 function makeItem (component, sources, props) {
   const newId = id();
 
-  const newItem = isolate(component, newId.toString())({...sources, ...props});
+  if (props) {
+    sources['props$'] = Observable.just(props);
+  }
+
+  const newItem = isolate(component, newId.toString())(sources);
 
   newItem.id = newId;
 

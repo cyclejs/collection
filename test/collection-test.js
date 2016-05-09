@@ -16,7 +16,7 @@ function addTodo (title) {
     return {
       ...state,
 
-      todos: state.todos.add({props$: Observable.just({title, complete: false})})
+      todos: state.todos.add({title, complete: false})
     };
   };
 }

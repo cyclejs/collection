@@ -42,12 +42,12 @@ function makeItem (component, sources, props) {
   return newItem;
 }
 
-export default function Collection (component, sources, handlers = {}, items = [], action$ = new Subject, subscriptions = {}) {
+export default function Collection (component, sources, handlers = {}, items = [], action$ = new Subject) {
   return {
     add (props) {
       const newItem = makeItem(component, sources, props);
 
-      const subscription = handlerStreams(component, newItem, handlers)
+      handlerStreams(component, newItem, handlers)
         .subscribe((action) => action$.onNext(action));
 
       return Collection(
@@ -55,23 +55,24 @@ export default function Collection (component, sources, handlers = {}, items = [
         sources,
         handlers,
         [...items, newItem],
-        action$,
-        {...subscriptions, [newItem.id]: subscription}
+        action$
       )
     },
 
     remove (itemForRemoval) {
-      subscriptions[itemForRemoval.id].dispose();
-      delete subscriptions[itemForRemoval.id];
-
       return Collection(
         component,
         sources,
         handlers,
         items.filter(item => item.id !== itemForRemoval.id),
-        action$,
-        subscriptions
+        action$
       )
+    },
+
+    pluck (sinkProperty) {
+      return Observable.combineLatest(
+        ...items.map(item => item[sinkProperty])
+      );
     },
 
     asArray () {

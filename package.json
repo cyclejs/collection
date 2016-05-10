@@ -5,8 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "babel-node server.js",
-    "test": "mocha --compilers js:babel-register",
-    "autotest": "mocha --compilers js:babel-register --watch -R Min",
+    "test": "npm run test/node && npm run test/browser",
+    "test/node": "mocha --compilers js:babel-register",
+    "test/node-auto": "mocha --compilers js:babel-register --watch -R Min",
+    "test/browser": "mochify --transform babelify 'test/browser/*'",
+    "test/browser-auto": "mochify --transform babelify 'test/browser/*' --watch -R min",
     "bundle": "browserify index.js -t babelify -t uglifyify -o bundle.js"
   },
   "author": "Nick Johnstone",
@@ -23,11 +26,14 @@
     "babel-cli": "^6.2.0",
     "babel-core": "^6.2.1",
     "babel-plugin-transform-object-rest-spread": "^6.8.0",
-    "babelify": "^7.2.0",
+    "babelify": "^7.3.0",
     "browserify": "^12.0.1",
     "browserify-hmr": "^0.3.1",
     "budo": "^6.1.0",
+    "jquery": "^2.2.3",
     "mocha": "^2.4.5",
+    "mochify": "^2.17.0",
+    "simulant": "^0.2.2",
     "uglifyify": "^3.0.1"
   }
 }

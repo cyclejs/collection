@@ -6,8 +6,8 @@
   "scripts": {
     "start": "babel-node server.js",
     "test": "npm run test/node && npm run test/browser",
-    "test/node": "mocha --compilers js:babel-register",
-    "test/node-auto": "mocha --compilers js:babel-register --watch -R Min",
+    "test/node": "mocha --compilers js:babel-core/register",
+    "test/node-auto": "mocha --compilers js:babel-core/register --watch -R Min",
     "test/browser": "mochify --transform babelify 'test/browser/*'",
     "test/browser-auto": "mochify --transform babelify 'test/browser/*' --watch -R min",
     "bundle": "browserify index.js -t babelify -t uglifyify -o bundle.js"
@@ -15,17 +15,20 @@
   "author": "Nick Johnstone",
   "license": "MIT",
   "dependencies": {
-    "@cycle/core": "^6.0.0-rc2",
-    "@cycle/dom": "github:widdershin/cycle-dom",
+    "@cycle/core": "^7.0.0-rc5",
+    "@cycle/dom": "^10.0.0-rc17",
     "@cycle/isolate": "^1.2.0",
+    "@cycle/xstream-run": "^1.1.0",
     "babel-preset-es2015": "^6.1.18",
     "cycle-restart": "0.0.14",
-    "rx": "^4.0.7"
+    "rx": "^4.0.7",
+    "xstream": "^2.3.0"
   },
   "devDependencies": {
     "babel-cli": "^6.2.0",
     "babel-core": "^6.2.1",
     "babel-plugin-transform-object-rest-spread": "^6.8.0",
+    "babel-polyfill": "^6.8.0",
     "babelify": "^7.3.0",
     "browserify": "^12.0.1",
     "browserify-hmr": "^0.3.1",

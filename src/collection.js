@@ -1,4 +1,4 @@
-import {Subject, Observable} from 'rx';
+import xs from 'xstream';
 import isolate from '@cycle/isolate';
 
 let _id = 0;
@@ -25,14 +25,14 @@ function handlerStreams (component, item, handlers) {
     });
   });
 
-  return Observable.merge(...sinkStreams.filter(action => action !== null));
+  return xs.merge(...sinkStreams.filter(action => action !== null));
 }
 
 function makeItem (component, sources, props) {
   const newId = id();
 
   if (props) {
-    sources['props$'] = Observable.just(props);
+    sources['props$'] = xs.of(props);
   }
 
   const newItem = isolate(component, newId.toString())(sources);
@@ -42,13 +42,23 @@ function makeItem (component, sources, props) {
   return newItem;
 }
 
-export default function Collection (component, sources, handlers = {}, items = [], action$ = new Subject) {
+export default function Collection (component, sources, handlers = {}, items = [], action$ = xs.create()) {
   return {
     add (props) {
       const newItem = makeItem(component, sources, props);
 
       handlerStreams(component, newItem, handlers)
-        .subscribe((action) => action$.onNext(action));
+        .addListener({
+          next (action) {
+            action$.shamefullySendNext(action);
+          },
+
+          error (err) {
+            console.error(err);
+          },
+
+          complete () {}
+        });
 
       return Collection(
         component,
@@ -56,7 +66,7 @@ export default function Collection (component, sources, handlers = {}, items = [
         handlers,
         [...items, newItem],
         action$
-      )
+      );
     },
 
     remove (itemForRemoval) {
@@ -66,11 +76,12 @@ export default function Collection (component, sources, handlers = {}, items = [
         handlers,
         items.filter(item => item.id !== itemForRemoval.id),
         action$
-      )
+      );
     },
 
     pluck (sinkProperty) {
-      return Observable.combineLatest(
+      return xs.combine(
+        (...items) => items,
         ...items.map(item => item[sinkProperty])
       );
     },
@@ -79,6 +90,6 @@ export default function Collection (component, sources, handlers = {}, items = [
       return items;
     },
 
-    action$: action$.asObservable()
-  }
+    action$: action$
+  };
 }

@@ -1,6 +1,6 @@
-import {run} from '@cycle/core';
+import {run} from '@cycle/xstream-run';
 import {makeDOMDriver, div, button, input} from '@cycle/dom';
-import {Observable} from 'rx';
+import xs from 'xstream';
 import Collection from './collection';
 
 function Counter ({DOM}) {
@@ -18,15 +18,14 @@ function Counter ({DOM}) {
     .events('click')
     .map(() => (state) => ({count: state.count - 1}));
 
-  const action$ = Observable.merge(
+  const action$ = xs.merge(
     add$,
     subtract$
   );
 
   const state$ = action$
-    .startWith({count: 0})
-    .scan((state, action) => action(state))
-    .shareReplay(1);
+    .fold((state, action) => action(state), {count: 0})
+    .remember();
 
   return {
     DOM: state$.map(({count}) => (
@@ -38,7 +37,7 @@ function Counter ({DOM}) {
       ])
     )),
 
-    count$: state$.pluck('count').shareReplay(1),
+    count$: state$.map(state => state.count),
 
     remove$
   }
@@ -52,6 +51,14 @@ function addCounter (state) {
   }
 }
 
+const view = (state, total, counterDOM) => (
+  div('.counters', [
+    button('.add-counter', 'Add counter'),
+    ...counterDOM,
+    'Total: ' + total.toString()
+  ])
+);
+
 function CountersList ({DOM}) {
   const counters = Collection(Counter, {DOM}, {
     remove$: function remove (state, removedCounter, event) {
@@ -63,7 +70,6 @@ function CountersList ({DOM}) {
     },
 
     count$: function (state, counter, count) {
-      console.log(count)
       return state;
     }
   })
@@ -77,38 +83,34 @@ function CountersList ({DOM}) {
     .events('click')
     .map(() => addCounter)
 
-  const action$ = Observable.merge(
+  const action$ = xs.merge(
     addCounter$,
     counters.action$
   )
 
   const state$ = action$
-    .startWith(initialState)
-    .scan((state, action) => action(state));
+    .fold((state, action) => action(state), initialState);
 
-  const counters$ = state$.pluck('counters');
+  const counters$ = state$.map(state => state.counters);
 
   function sum (arr) {
     return arr.reduce((total, acc) => total + acc, 0);
   }
 
   const total$ = counters$
-    .flatMap(counters => counters.pluck('count$').map(sum))
+    .map(counters => counters.pluck('count$').map(sum))
+    .flatten()
     .startWith(0);
 
   const counterDOM$ = counters$
-    .flatMap(counters => counters.pluck('DOM'))
+    .map(counters => counters.pluck('DOM'))
+    .flatten()
+    .debug()
     .startWith([]);
 
   return {
-    DOM: Observable.combineLatest(state$, total$, counterDOM$, (state, total, counterDOM) => (
-      div('.counters', [
-        button('.add-counter', 'Add counter'),
-        ...counterDOM,
-        'Total: ' + total.toString()
-      ])
-    ))
-  }
+    DOM: xs.combine(view, state$, total$, counterDOM$)
+  };
 }
 
 export default CountersList;

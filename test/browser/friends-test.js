@@ -1,11 +1,14 @@
 
-import {run} from '@cycle/core';
+import {run} from '@cycle/xstream-run';
 import {makeDOMDriver, div, button, input} from '@cycle/dom';
-import Rx, {Observable} from 'rx';
 import Collection from '../../src/collection';
 import assert from 'assert';
 import $ from 'jquery';
 import simulant from 'simulant';
+
+import xs from 'xstream';
+
+require("babel-polyfill");
 
 function createRenderTarget () {
    const element = document.createElement('div');
@@ -30,7 +33,6 @@ function runStep (step, steps, previousResult) {
 function runSteps (steps) {
   runStep(steps[0], steps);
 }
-
 
 function Friend ({DOM, props$}) {
   const dismiss$ = DOM
@@ -81,26 +83,26 @@ function FriendsList ({DOM}) {
     .events('change')
     .map(ev => ev.target.value)
 
-  const addFriend$ = DOM
+  const addFriendClick$ = DOM
     .select('.add-friend')
     .events('click')
-    .withLatestFrom(friendName$, (_, friendName) => addFriend(friendName));
 
-  const action$ = Observable.merge(
+  const addFriend$ = friendName$
+    .map(friendName => addFriendClick$.map(() => addFriend(friendName))).flatten()
+
+  const action$ = xs.merge(
     addFriend$,
     friends.action$
-  )
+  );
 
   const state$ = action$
-    .startWith(initialState)
-    .scan((state, action) => action(state));
+    .fold((state, action) => action(state), initialState)
 
   return {
     DOM: state$.map(state => (
       div('.friends', [
         input('.friend-name'),
-        button('.add-friend', 'Add friend'),
-        ...state.friends.asArray().map(friend => friend.DOM)
+        button('.add-friend', 'Add friend')
       ])
     )),
 
@@ -122,6 +124,7 @@ describe('friends', () => {
       },
 
       () => {
+        console.log($(container).html(), 'wat')
         const friendNameField = $(".friend-name")[0];
         const addFriendField = $(".add-friend")[0];
 

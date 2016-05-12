@@ -3,7 +3,7 @@ An easier way to do collections in Cycle
 
 Collection components, like todo lists and feeds, are one of the weakest points of Cycle's architecture currently.
 
-Consider a TodoItem in a TodoList. It might have a remove button, and surely the whole point of isolation is that the TodoItem can select it's own remove button and click events. What happens when remove is clicked?
+Consider a TodoItem in a TodoList. It might have a remove button, and surely the whole point of isolation is that the TodoItem can select its own remove button and click events. What happens when remove is clicked?
 
 The current idiom involves having the components return a stream of actions, that are manually hooked up using a subject to the main stream of actions in the application.
 
@@ -56,7 +56,7 @@ function FriendsList ({DOM}) {
   }
 
   const addStartingFriend$ = Observable.just(
-    (state) => ({...state, friends: state.friends.add({name: 'test'})})
+    (state) => ({...state, friends: state.friends.add({name: 'Hala'})})
   );
 
   const action$ = Observable.merge(

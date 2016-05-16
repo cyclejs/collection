@@ -7,7 +7,7 @@ function id () {
   return _id++;
 }
 
-function handlerStreams (component, item, handlers) {
+function handlerStreams (component, item, handlers = {}) {
   const sinkStreams = Object.keys(item).map(sink => {
     if (handlers[sink] === undefined) {
       return null;

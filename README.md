@@ -1,78 +1,109 @@
 # cycle-collections
 An easier way to do collections in Cycle
 
-Collection components, like todo lists and feeds, are one of the weakest points of Cycle's architecture currently.
+Managing child components in Cycle.js can be a pain. The recommended approach is using "Dataflow Components", which are really just mini Cycle main functions. The tricky part is managing their addition, removal, updates and isolation.
 
-Consider a TodoItem in a TodoList. It might have a remove button, and surely the whole point of isolation is that the TodoItem can select its own remove button and click events. What happens when remove is clicked?
+`cycle-collections` provides a little helper function to manage your collections.
 
-The current idiom involves having the components return a stream of actions, that are manually hooked up using a subject to the main stream of actions in the application.
+Say we have a `Counter` component:
 
-cycle-collections provides a Collection helper function, to mask the subject and ease the pain of common actions like adding, removing and updating child components. It's designed to be used in any dataflow component that has children.
-
-
-Installation
----
-
-Coming soon to an npm near you...
-
-Example
----
+<!-- share-code-between-examples -->
 
 ```js
-import {run} from '@cycle/core';
-import {makeDOMDriver, div, button} from '@cycle/dom';
-import Collection from 'cycle-collections';
+function Counter({DOM}) {
+  const add$ = DOM
+    .select('.add')
+    .events('click')
+    .mapTo(+1);
 
-function Friend ({DOM, props$}) {
-  const dismiss$ = DOM
-    .select('.dismiss')
-    .events('click');
+  const count$ = add$
+    .fold((total, change) => total + change, 0);
 
   return {
-    DOM: props$.map(props => (
-      div('.friend', [
-        JSON.stringify(props),
-        button('.dismiss', 'x')
+    DOM: count$.map(count => (
+      div('.counter', [
+        div('.count', count.toString()),
+        button('.add', '+')
       ])
-    ),
-
-    dismiss$
-  }
-}
-
-function FriendsList ({DOM}) {
-  const friends = Collection(Friend, {DOM}, {
-    dismiss$: function (state, dismissedFriend) => {
-      return {
-        ...state,
-
-        friends: state.friends.remove(dismissedFriend)
-      }
-    }
-  })
-
-  const initialState = {
-    friends
-  }
-
-  const addStartingFriend$ = Observable.just(
-    (state) => ({...state, friends: state.friends.add({name: 'Hala'})})
-  );
-
-  const action$ = Observable.merge(
-    addStartingFriend$,
-    friends.action$
-  )
-
-  const state$ = action$
-    .startWith(initialState)
-    .scan((state, action) => action(state));
-
-  return {
-    DOM: state$.map(state => (
-      div('.friends', state.friends.asArray().map(friend => friend.DOM))
-    )
+    ))
   }
 }
 ```
+
+If we want to make a list of them, we can do it like so:
+
+```js
+const counters = Collection(Counter, {DOM});
+
+counters.asArray();
+// => []
+```
+
+We can add a new counter by calling `.add()`
+
+```js
+counters.add();
+
+counters.asArray();
+// => []
+```
+
+Why is counters still empty? Well, all of the methods on a `Collection` are immutable, aka they return a new collection, not modifying your current one.
+
+So how do you build up a collection? You store the result of the call to `.add()`
+
+```js
+const updatedCounters = counters.add();
+
+counters.asArray();
+// => [{counter!}]
+```
+
+You can also `.remove()` items:
+```js
+const updatedCounters = counters
+  .add()
+  .add();
+
+const firstCounter = counters.asArray()[0];
+
+updatedCounters
+  .remove(firstCounter)
+  .asArray()
+  .length
+// => 2
+```
+
+If the usage seems strange it's because `Collection` is designed to be used inside of the `scan`/`fold` of a Cycle.js component.
+
+Here is an example of a CounterList function:
+
+```js
+function CounterList ({DOM}) {
+  const initialCounters = Collection(Counter, {DOM});
+
+  const addCounter$ = DOM
+    .select('.add-counter')
+    .events('click');
+
+  const counters$ = addCounter$
+    .fold((counters) => counters.add(), initialCounters);
+
+  const counterVtrees$ = Collection.pluck(counters$, 'DOM');
+
+  return {
+    DOM: counterVtrees$.map(counterVtrees => (
+      div('.counter-list', [
+        button('.add-counter', 'Add counter'),
+        div('.counters', counterVtrees)
+      ])
+    ))
+  };
+}
+```
+
+Here we encounter one of the most useful parts of `Collection`, `Collection.pluck`. `Collection.pluck` takes a stream where each item is a collection, and a property to pluck. It returns a stream of an array of each item's property combined.
+
+Normally this is a map + flatten + combine but cycle-collection makes this one function call.
+
 

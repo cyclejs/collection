@@ -42,6 +42,7 @@ function makeItem (component, sources, props) {
   const newItem = isolate(component, newId.toString())(sources);
 
   newItem.id = newId;
+  newItem.name = component.name;
 
   return newItem;
 }
@@ -102,7 +103,7 @@ Collection.pluck = function pluck (collection$, sinkProperty) {
   const sinks = {};
 
   function sink$ (item) {
-    const key = `${item.id}.${sinkProperty}`;
+    const key = `${item.name}.${item.id}.${sinkProperty}`;
 
     if (sinks[key] === undefined) {
       if (sinkProperty === 'DOM') {

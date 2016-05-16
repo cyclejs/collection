@@ -89,7 +89,7 @@ const cardChildActions = {
       ...state,
 
       cards: state.cards.remove(removedCard)
-    }
+    };
   }
 };
 
@@ -174,9 +174,9 @@ export default function main ({DOM}) {
 
   const state$ = action$.fold((state, action) => action(state), initialState);
 
-  const lists$ = state$.map(state => state.lists)
+  const lists$ = state$.map(state => state.lists);
 
-  const listVtrees$ = Collection.pluck(lists$, 'DOM')
+  const listVtrees$ = Collection.pluck(lists$, 'DOM');
 
   return {
     DOM: xs.combine(view, state$, listVtrees$)

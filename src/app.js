@@ -98,6 +98,8 @@ function listView (state, cardsVtrees) {
     div('.list', [
       button('.add-card', 'Add card'),
 
+      button('.remove', 'x'),
+
       div('.cards', cardsVtrees)
     ])
   );
@@ -105,6 +107,10 @@ function listView (state, cardsVtrees) {
 
 function List ({DOM, props$}) {
   const cards = Collection(Card, {DOM}, cardChildActions);
+
+  const remove$ = DOM
+    .select('.remove')
+    .events('click');
 
   const addCard$ = DOM
     .select('.add-card')
@@ -128,7 +134,9 @@ function List ({DOM, props$}) {
   const cardsVtrees$ = Collection.pluck(cards$, 'DOM');
 
   return {
-    DOM: xs.combine(listView, state$, cardsVtrees$).remember()
+    DOM: xs.combine(listView, state$, cardsVtrees$),
+
+    remove$
   };
 }
 
@@ -142,7 +150,15 @@ const actions = {
   }
 };
 
-const listChildActions = {};
+const listChildActions = {
+  remove$ (state, removedList) {
+    return {
+      ...state,
+
+      lists: state.lists.remove(removedList)
+    };
+  }
+};
 
 function view (state, listVtrees) {
   return (

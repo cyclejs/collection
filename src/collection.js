@@ -3,9 +3,9 @@ import isolate from '@cycle/isolate';
 
 let _id = 0;
 
-function id() {
+function id () {
   return _id++;
-};
+}
 
 function handlerStreams (component, item, handlers) {
   const sinkStreams = Object.keys(item).map(sink => {
@@ -78,7 +78,7 @@ export default function Collection (component, sources, handlers = {}, items = [
         component,
         sources,
         handlers,
-        items.filter(item => item.id !== itemForRemoval.id),
+        items.filter(item => item !== itemForRemoval),
         action$
       );
     },
@@ -87,7 +87,7 @@ export default function Collection (component, sources, handlers = {}, items = [
       return xs.combine(
         (...items) => items,
         ...items.map(item => item[sinkProperty])
-      )
+      );
     },
 
     asArray () {
@@ -105,11 +105,16 @@ Collection.pluck = function pluck (collection$, sinkProperty) {
     const key = `${item.id}.${sinkProperty}`;
 
     if (sinks[key] === undefined) {
-      sinks[key] = item[sinkProperty].remember();
+      if (sinkProperty === 'DOM') {
+        sinks[key] = item[sinkProperty].map(vtree => ({...vtree, key})).remember();
+      } else {
+        sinks[key] = item[sinkProperty].remember();
+      }
     }
 
     return sinks[key];
   }
+
   return collection$
     .map(collection => collection.asArray().map(item => sink$(item)))
     .map(sinkStreams => xs.combine((...items) => items, ...sinkStreams))

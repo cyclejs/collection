@@ -1,0 +1,45 @@
+html, body {
+  background: #102030;
+}
+
+.lists {
+  display: flex;
+}
+
+.list {
+  width: 10%;
+  height: 100%;
+
+  padding: 10px;
+  margin: 20px;
+
+  border-radius: 5px;
+
+  background: #999;
+}
+
+.cards {
+  display: flex;
+
+  flex-direction: column;
+}
+
+.card {
+  background: #ddd;
+
+  height: 50px;
+
+  padding: 10px;
+
+  border-radius: 3px;
+
+  margin: 5px;
+}
+
+.card textarea {
+  width: 100%;
+}
+
+.main {
+}
+

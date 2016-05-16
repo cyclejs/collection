@@ -1,116 +1,184 @@
-import {run} from '@cycle/xstream-run';
-import {makeDOMDriver, div, button, input} from '@cycle/dom';
+import {div, button, textarea} from '@cycle/dom';
 import xs from 'xstream';
 import Collection from './collection';
 
-function Counter ({DOM}) {
+const cardActions = {
+  toggleEditing (state) {
+    return {
+      ...state,
+
+      editing: !state.editing
+    };
+  },
+
+  saveChanges (text) {
+    return (state) => {
+      return {
+        ...state,
+
+        text,
+
+        editing: false
+      };
+    };
+  }
+};
+
+function Card ({DOM}) {
   const remove$ = DOM
     .select('.remove')
     .events('click');
 
-  const add$ = DOM
-    .select('.add')
-    .events('click')
-    .map(() => (state) => ({count: state.count + 1}));
+  const editing$ = DOM
+    .select('.card')
+    .events('dblclick')
+    .mapTo(cardActions.toggleEditing);
 
-  const subtract$ = DOM
-    .select('.subtract')
-    .events('click')
-    .map(() => (state) => ({count: state.count - 1}));
+  const clickSave$ = DOM
+    .select('.save')
+    .events('click');
+
+  const textChange$ = DOM
+    .select('.change-text')
+    .events('change')
+    .map(ev => ev.target.value);
+
+  const saveChanges$ = textChange$
+    .map(text => clickSave$.map(() => cardActions.saveChanges(text)))
+    .flatten();
+
+  const initialState = {
+    text: 'Double click to edit',
+    editing: false
+  };
 
   const action$ = xs.merge(
-    add$,
-    subtract$
+    editing$,
+
+    saveChanges$
   );
 
-  const state$ = action$
-    .fold((state, action) => action(state), {count: 0})
-    .remember();
+  const state$ = action$.fold((state, action) => action(state), initialState);
 
   return {
-    DOM: state$.map(({count}) => (
-      div('.counter', [
-        button('.subtract', '-'),
-        count.toString(),
-        button('.add', '+'),
-        button('.remove', 'x')
+    DOM: state$.map(state => (
+      div('.card', [
+        state.editing ? textarea('.change-text', state.text) : state.text,
+        button('.remove', 'x'),
+        state.editing ? button('.save', 'Save') : ''
       ])
     )),
 
-    count$: state$.map(state => state.count),
-
     remove$
-  }
-}
-
-function addCounter (state) {
-  return {
-    ...state,
-
-    counters: state.counters.add({count: 0})
-  }
-}
-
-const view = (state, total, counterDOM) => (
-  div('.counters', [
-    button('.add-counter', 'Add counter'),
-    ...counterDOM,
-    'Total: ' + total.toString()
-  ])
-);
-
-function CountersList ({DOM}) {
-  const counters = Collection(Counter, {DOM}, {
-    remove$: function remove (state, removedCounter, event) {
-      return {
-        ...state,
-
-        counters: state.counters.remove(removedCounter)
-      }
-    },
-
-    count$: function (state, counter, count) {
-      return state;
-    }
-  })
-
-  const initialState = {
-    counters
-  }
-
-  const addCounter$ = DOM
-    .select('.add-counter')
-    .events('click')
-    .map(() => addCounter)
-
-  const action$ = xs.merge(
-    addCounter$,
-    counters.action$
-  )
-
-  const state$ = action$
-    .fold((state, action) => action(state), initialState);
-
-  const counters$ = state$.map(state => state.counters);
-
-  function sum (arr) {
-    return arr.reduce((total, acc) => total + acc, 0);
-  }
-
-  const total$ = counters$
-    .map(counters => counters.pluck('count$').map(sum))
-    .flatten()
-    .startWith(0);
-
-  const counterDOM$ = counters$
-    .map(counters => counters.pluck('DOM'))
-    .flatten()
-    .debug()
-    .startWith([]);
-
-  return {
-    DOM: xs.combine(view, state$, total$, counterDOM$)
   };
 }
 
-export default CountersList;
+const listActions = {
+  addCard (state) {
+    return {
+      ...state,
+
+      cards: state.cards.add({})
+    };
+  }
+};
+
+const cardChildActions = {
+  remove$ (state, removedCard) {
+    return {
+      ...state,
+
+      cards: state.cards.remove(removedCard)
+    }
+  }
+};
+
+function listView (state, cardsVtrees) {
+  return (
+    div('.list', [
+      button('.add-card', 'Add card'),
+
+      div('.cards', cardsVtrees)
+    ])
+  );
+}
+
+function List ({DOM, props$}) {
+  const cards = Collection(Card, {DOM}, cardChildActions);
+
+  const addCard$ = DOM
+    .select('.add-card')
+    .events('click')
+    .mapTo(listActions.addCard);
+
+  const action$ = xs.merge(
+    cards.action$,
+
+    addCard$
+  );
+
+  const initialState = {
+    cards
+  };
+
+  const state$ = action$.fold((state, action) => action(state), initialState);
+
+  const cards$ = state$.map(state => state.cards);
+
+  const cardsVtrees$ = Collection.pluck(cards$, 'DOM');
+
+  return {
+    DOM: xs.combine(listView, state$, cardsVtrees$).remember()
+  };
+}
+
+const actions = {
+  addList (state) {
+    return {
+      ...state,
+
+      lists: state.lists.add({})
+    };
+  }
+};
+
+const listChildActions = {};
+
+function view (state, listVtrees) {
+  return (
+    div('.main', [
+      button('.add-list', 'Add list'),
+
+      div('.lists', listVtrees)
+    ])
+  );
+}
+
+export default function main ({DOM}) {
+  const lists = Collection(List, {DOM}, listChildActions);
+
+  const initialState = {
+    lists
+  };
+
+  const addList$ = DOM
+    .select('.add-list')
+    .events('click')
+    .mapTo(actions.addList);
+
+  const action$ = xs.merge(
+    lists.action$,
+
+    addList$
+  );
+
+  const state$ = action$.fold((state, action) => action(state), initialState);
+
+  const lists$ = state$.map(state => state.lists)
+
+  const listVtrees$ = Collection.pluck(lists$, 'DOM')
+
+  return {
+    DOM: xs.combine(view, state$, listVtrees$)
+  };
+}

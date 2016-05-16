@@ -99,11 +99,20 @@ export default function Collection (component, sources, handlers = {}, items = [
 }
 
 Collection.pluck = function pluck (collection$, sinkProperty) {
+  const sinks = {};
+
+  function sink$ (item) {
+    const key = `${item.id}.${sinkProperty}`;
+
+    if (sinks[key] === undefined) {
+      sinks[key] = item[sinkProperty].remember();
+    }
+
+    return sinks[key];
+  }
   return collection$
-    .map(collection => xs.combine(
-      (...items) => items,
-      ...collection.asArray().map(item => item[sinkProperty].remember())
-    ))
+    .map(collection => collection.asArray().map(item => sink$(item)))
+    .map(sinkStreams => xs.combine((...items) => items, ...sinkStreams))
     .flatten()
     .startWith([]);
 };

@@ -32,7 +32,11 @@ function makeItem (component, sources, props) {
   const newId = id();
 
   if (props) {
-    sources['props$'] = xs.of(props);
+    if (!props.addListener) {
+      props = xs.of(props);
+    }
+
+    sources['props$'] = props;
   }
 
   const newItem = isolate(component, newId.toString())(sources);
@@ -83,7 +87,7 @@ export default function Collection (component, sources, handlers = {}, items = [
       return xs.combine(
         (...items) => items,
         ...items.map(item => item[sinkProperty])
-      );
+      )
     },
 
     asArray () {
@@ -93,3 +97,13 @@ export default function Collection (component, sources, handlers = {}, items = [
     action$: action$
   };
 }
+
+Collection.pluck = function pluck (collection$, sinkProperty) {
+  return collection$
+    .map(collection => xs.combine(
+      (...items) => items,
+      ...collection.asArray().map(item => item[sinkProperty].remember())
+    ))
+    .flatten()
+    .startWith([]);
+};

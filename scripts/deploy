@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+git fetch
+
+git checkout gh-pages
+
+git merge master --no-commit
+
+npm install
+
+npm run bundle
+
+git commit -am "Update bundle"
+
+git push origin gh-pages --force
+
+git checkout -

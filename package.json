@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Manage a collection of item in your dataflow component",
   "main": "lib/collection.js",
+  "files": ["lib/"],
   "scripts": {
     "start": "babel-node server.js",
     "test": "npm run test/node && npm run test/browser",

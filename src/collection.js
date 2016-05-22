@@ -39,10 +39,10 @@ function makeItem (component, sources, props) {
   return newItem;
 }
 
-function makeListener (action$) {
+function makeListener (reducers) {
   return {
     next (action) {
-      action$.shamefullySendNext(action);
+      reducers.shamefullySendNext(action);
     },
 
     error (err) {
@@ -53,19 +53,19 @@ function makeListener (action$) {
   };
 }
 
-export default function Collection (component, sources = {}, handlers = {}, items = [], action$ = xs.create()) {
+export default function Collection (component, sources = {}, handlers = {}, items = [], reducers = xs.create()) {
   return {
     add (additionalSources = {}) {
       const newItem = makeItem(component, {...sources, ...additionalSources});
 
-      handlerStreams(component, newItem, handlers).addListener(makeListener(action$));
+      handlerStreams(component, newItem, handlers).addListener(makeListener(reducers));
 
       return Collection(
         component,
         sources,
         handlers,
         [...items, newItem],
-        action$
+        reducers
       );
     },
 
@@ -75,7 +75,7 @@ export default function Collection (component, sources = {}, handlers = {}, item
         sources,
         handlers,
         items.filter(item => item !== itemForRemoval),
-        action$
+        reducers
       );
     },
 
@@ -83,7 +83,7 @@ export default function Collection (component, sources = {}, handlers = {}, item
       return items;
     },
 
-    action$
+    reducers
   };
 }
 

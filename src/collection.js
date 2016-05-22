@@ -39,23 +39,26 @@ function makeItem (component, sources, props) {
   return newItem;
 }
 
-export default function Collection (component, sources, handlers = {}, items = [], action$ = xs.create()) {
+function makeListener (action$) {
+  return {
+    next (action) {
+      action$.shamefullySendNext(action);
+    },
+
+    error (err) {
+      console.error(err);
+    },
+
+    complete () {}
+  };
+}
+
+export default function Collection (component, sources = {}, handlers = {}, items = [], action$ = xs.create()) {
   return {
     add (additionalSources = {}) {
       const newItem = makeItem(component, {...sources, ...additionalSources});
 
-      handlerStreams(component, newItem, handlers)
-        .addListener({
-          next (action) {
-            action$.shamefullySendNext(action);
-          },
-
-          error (err) {
-            console.error(err);
-          },
-
-          complete () {}
-        });
+      handlerStreams(component, newItem, handlers).addListener(makeListener(action$));
 
       return Collection(
         component,
@@ -80,7 +83,7 @@ export default function Collection (component, sources, handlers = {}, items = [
       return items;
     },
 
-    action$: action$
+    action$
   };
 }
 

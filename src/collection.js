@@ -76,13 +76,6 @@ export default function Collection (component, sources, handlers = {}, items = [
       );
     },
 
-    pluck (sinkProperty) {
-      return xs.combine(
-        (...items) => items,
-        ...items.map(item => item[sinkProperty])
-      );
-    },
-
     asArray () {
       return items;
     },

@@ -10,61 +10,6 @@ function Widget ({props$}) {
 }
 
 describe('Collection.pluck', (done) => {
-  it('returns a stream of the values of the given sink', (done) => {
-    let collection = Collection(Widget, {}, {});
-
-    const props$ = xs.create();
-
-    collection.add({props$: props$}).pluck('state$').addListener({
-      next (val) {
-        assert.deepEqual(val, [{foo: 'bar'}])
-        done();
-      },
-      error (err) {
-      },
-      complete () {
-      }
-    });
-
-    props$.shamefullySendNext({foo: 'bar'})
-  });
-
-  it('handles multiple items', (done) => {
-    let collection = Collection(Widget, {}, {});
-
-    const props$ = xs.create();
-    const props2$ = xs.create();
-
-    const states$ = collection
-      .add({props$: props$})
-      .add({props$: props2$})
-      .pluck('state$');
-
-    const expected = [
-      [{foo: 'bar'}, {baz: 'quix'}],
-      [{foo: 'bazaar!'}, {baz: 'quix'}]
-    ];
-
-    states$.take(2).addListener({
-      next (val) {
-        assert.deepEqual(val, expected.shift());
-
-        if (expected.length === 1) {
-          props$.shamefullySendNext({foo: 'bar'});
-        }
-
-        if (expected.length === 0) {
-          done();
-        }
-      },
-      error () {},
-      complete () {}
-    });
-
-    props$.shamefullySendNext({foo: 'bar'});
-    props2$.shamefullySendNext({baz: 'quix'});
-  });
-
   it('handles adding items', (done) => {
     const collection = Collection(Widget, {}, {});
 

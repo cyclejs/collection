@@ -6,12 +6,13 @@
   "files": ["lib/"],
   "scripts": {
     "start": "babel-node server.js",
-    "test": "npm run test/node && npm run test/browser",
+    "test": "npm run test/node",
     "test/node": "mocha --compilers js:babel-core/register",
     "test/node-auto": "mocha --compilers js:babel-core/register --watch -R Min",
-    "test/browser": "mochify --transform babelify 'test/browser/*'",
-    "test/browser-auto": "mochify --transform babelify 'test/browser/*' --watch -R min",
-    "bundle": "browserify index.js -t babelify -t uglifyify -o bundle.js"
+    "bundle": "browserify index.js -t babelify -t uglifyify -o bundle.js",
+    "precompile-lib": "rm -rf lib/ && mkdir -p lib",
+    "compile-lib": "babel src -d lib",
+    "prepublish": "npm run compile-lib"
   },
   "author": "Nick Johnstone",
   "license": "MIT",

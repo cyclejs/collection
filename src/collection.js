@@ -31,14 +31,6 @@ function handlerStreams (component, item, handlers = {}) {
 function makeItem (component, sources, props) {
   const newId = id();
 
-  if (props) {
-    if (!props.addListener) {
-      props = xs.of(props);
-    }
-
-    sources['props$'] = props;
-  }
-
   const newItem = isolate(component, newId.toString())(sources);
 
   newItem.id = newId;
@@ -49,8 +41,8 @@ function makeItem (component, sources, props) {
 
 export default function Collection (component, sources, handlers = {}, items = [], action$ = xs.create()) {
   return {
-    add (props) {
-      const newItem = makeItem(component, sources, props);
+    add (additionalSources = {}) {
+      const newItem = makeItem(component, {...sources, ...additionalSources});
 
       handlerStreams(component, newItem, handlers)
         .addListener({

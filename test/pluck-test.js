@@ -6,7 +6,7 @@ import Collection from '../src/collection';
 function Widget ({props$}) {
   return {
     state$: props$
-  }
+  };
 }
 
 describe('Collection.pluck', (done) => {
@@ -15,7 +15,7 @@ describe('Collection.pluck', (done) => {
 
     const props$ = xs.create();
 
-    collection.add(props$).pluck('state$').addListener({
+    collection.add({props$: props$}).pluck('state$').addListener({
       next (val) {
         assert.deepEqual(val, [{foo: 'bar'}])
         done();
@@ -36,8 +36,8 @@ describe('Collection.pluck', (done) => {
     const props2$ = xs.create();
 
     const states$ = collection
-      .add(props$)
-      .add(props2$)
+      .add({props$: props$})
+      .add({props$: props2$})
       .pluck('state$');
 
     const expected = [
@@ -71,8 +71,8 @@ describe('Collection.pluck', (done) => {
     const props$ = xs.create().startWith({foo: 'bar'});
 
     const collectionUpdate$ = xs.fromArray([
-      (col) => col.add(props$),
-      (col) => col.add({baz: 'quix'})
+      (col) => col.add({props$}),
+      (col) => col.add({props$: xs.of({baz: 'quix'})})
     ]);
 
     const collection$ = collectionUpdate$

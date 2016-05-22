@@ -55,13 +55,13 @@ So how do you build up a collection? You store the result of the call to `.add()
 ```js
 const updatedCounters = counters.add();
 
-counters.asArray();
+updatedCounters.asArray();
 // => [{counter!}]
 ```
 
 You can also `.remove()` items:
 ```js
-const updatedCounters = counters
+const twoCounters = counters
   .add()
   .add();
 
@@ -71,7 +71,7 @@ updatedCounters
   .remove(firstCounter)
   .asArray()
   .length
-// => 2
+// => 1
 ```
 
 If the usage seems strange it's because `Collection` is designed to be used inside of the `scan`/`fold` of a Cycle.js component.

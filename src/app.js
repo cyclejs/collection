@@ -2,7 +2,7 @@ import {div, button, textarea} from '@cycle/dom';
 import xs from 'xstream';
 import Collection from './collection';
 
-const cardActions = {
+const cardReducers = {
   toggleEditing (state) {
     return {
       ...state,
@@ -32,7 +32,7 @@ function Card ({DOM}) {
   const editing$ = DOM
     .select('.card')
     .events('dblclick')
-    .mapTo(cardActions.toggleEditing);
+    .mapTo(cardReducers.toggleEditing);
 
   const clickSave$ = DOM
     .select('.save')
@@ -44,7 +44,7 @@ function Card ({DOM}) {
     .map(ev => ev.target.value);
 
   const saveChanges$ = textChange$
-    .map(text => clickSave$.map(() => cardActions.saveChanges(text)))
+    .map(text => clickSave$.map(() => cardReducers.saveChanges(text)))
     .flatten();
 
   const initialState = {
@@ -52,13 +52,13 @@ function Card ({DOM}) {
     editing: false
   };
 
-  const action$ = xs.merge(
+  const reducer$ = xs.merge(
     editing$,
 
     saveChanges$
   );
 
-  const state$ = action$.fold((state, action) => action(state), initialState);
+  const state$ = reducer$.fold((state, reducer) => reducer(state), initialState);
 
   return {
     DOM: state$.map(state => (
@@ -73,15 +73,9 @@ function Card ({DOM}) {
   };
 }
 
-const listActions = {
+const listReducers = {
   addCard (cards) {
     return cards.add();
-  }
-};
-
-const cardChildActions = {
-  remove$ (cards, removedCard) {
-    return cards.remove(removedCard);
   }
 };
 
@@ -98,7 +92,11 @@ function listView (cardsVtrees) {
 }
 
 function List ({DOM, props$}) {
-  const cards = Collection(Card, {DOM}, cardChildActions);
+  const cards = Collection(Card, {DOM}, {
+    remove$ (cards, removedCard) {
+      return cards.remove(removedCard);
+    }
+  });
 
   const remove$ = DOM
     .select('.remove')
@@ -107,15 +105,15 @@ function List ({DOM, props$}) {
   const addCard$ = DOM
     .select('.add-card')
     .events('click')
-    .mapTo(listActions.addCard);
+    .mapTo(listReducers.addCard);
 
-  const action$ = xs.merge(
-    cards.action$,
+  const reducer$ = xs.merge(
+    cards.reducers,
 
     addCard$
   );
 
-  const cards$ = action$.fold((state, action) => action(state), cards);
+  const cards$ = reducer$.fold((state, reducer) => reducer(state), cards);
 
   const cardsVtrees$ = Collection.pluck(cards$, 'DOM');
 
@@ -126,15 +124,9 @@ function List ({DOM, props$}) {
   };
 }
 
-const actions = {
+const reducers = {
   addList (lists) {
     return lists.add();
-  }
-};
-
-const listChildActions = {
-  remove$ (lists, removedList) {
-    return lists.remove(removedList);
   }
 };
 
@@ -149,20 +141,24 @@ function view (listVtrees) {
 }
 
 export default function main ({DOM}) {
-  const lists = Collection(List, {DOM}, listChildActions);
+  const lists = Collection(List, {DOM}, {
+    remove$ (lists, removedList) {
+      return lists.remove(removedList);
+    }
+  });
 
   const addList$ = DOM
     .select('.add-list')
     .events('click')
-    .mapTo(actions.addList);
+    .mapTo(reducers.addList);
 
-  const action$ = xs.merge(
-    lists.action$,
+  const reducer$ = xs.merge(
+    lists.reducers,
 
     addList$
   );
 
-  const lists$ = action$.fold((state, action) => action(state), lists);
+  const lists$ = reducer$.fold((state, reducer) => reducer(state), lists);
 
   const listVtrees$ = Collection.pluck(lists$, 'DOM');
 

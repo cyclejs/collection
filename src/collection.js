@@ -19,13 +19,13 @@ function handlerStreams (component, item, handlers = {}) {
     return sink$.map(event => {
       event.stopPropagation && event.stopPropagation();
 
-      const handlerAction = (state) => handler(state, item, event);
+      const handlerReducer = (state) => handler(state, item, event);
 
-      return handlerAction;
+      return handlerReducer;
     });
   });
 
-  return xs.merge(...sinkStreams.filter(action => action !== null));
+  return xs.merge(...sinkStreams.filter(reducer => reducer !== null));
 }
 
 function makeItem (component, sources, props) {
@@ -41,8 +41,8 @@ function makeItem (component, sources, props) {
 
 function makeListener (reducers) {
   return {
-    next (action) {
-      reducers.shamefullySendNext(action);
+    next (reducer) {
+      reducers.shamefullySendNext(reducer);
     },
 
     error (err) {
@@ -53,7 +53,7 @@ function makeListener (reducers) {
   };
 }
 
-export default function Collection (component, sources = {}, handlers = {}, items = [], reducers = xs.create()) {
+function Collection (component, sources = {}, handlers = {}, items = [], reducers = xs.create()) {
   return {
     add (additionalSources = {}) {
       const newItem = makeItem(component, {...sources, ...additionalSources});
@@ -80,7 +80,7 @@ export default function Collection (component, sources = {}, handlers = {}, item
     },
 
     asArray () {
-      return items;
+      return items.slice(); // returns a copy of items to avoid mutation
     },
 
     reducers
@@ -110,3 +110,5 @@ Collection.pluck = function pluck (collection$, sinkProperty) {
     .flatten()
     .startWith([]);
 };
+
+export default Collection;

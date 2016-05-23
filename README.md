@@ -5,6 +5,12 @@ Components can be hard to manage in Cycle.js. They can be especially painful whe
 
 `Collection` is a helper function that makes managing your lists of components a cinch.
 
+Installation
+---
+```bash
+$ npm install @cycle/collection --save
+```
+
 How does it work?
 ---
 

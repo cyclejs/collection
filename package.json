@@ -18,6 +18,9 @@
   },
   "author": "Nick Johnstone",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@cycle/isolate": "^1.2.0",
     "xstream": "^2.3.0"

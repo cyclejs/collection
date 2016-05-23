@@ -16,6 +16,14 @@ import Collection from 'cycle-collections';
 
 Let's say we have a `TodoListItem` component, and we want to make a `TodoList`.
 
+```js
+function TodoListItem (sources) {
+  // ...
+
+  return sinks;
+}
+```
+
 You can make a collection by calling `Collection()` and passing it a component.
 
 ```js
@@ -109,7 +117,7 @@ const todoListItems$ = addTodoReducer$
 There are a few things going in this line.
  * We're folding over `addTodoReducer$`, which is a stream of functions that take `todoListItems` and return updated `todoListItems`
  * We're calling each `reducer` and passing the current `items` into it. Each `reducer` returns an updated `items`.
- * We're passing `todoListItems` as the initial value to `fold`, which is the empty collection be made above in our `TodoList` function.
+ * We're passing `todoListItems` as the initial value to `fold`, which is the empty collection we made above in our `TodoList` function.
 
  If we put it all together in our `TodoList` it looks like this:
 
@@ -179,6 +187,89 @@ function TodoList (sources) {
   const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
 
   const todoListItems$ = addTodoReducer$
+    .fold((items, reducer) => reducer(item), todoListItems);
+
+  const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
+
+  const sinks = {
+    DOM: todoListItemVtrees$.map(vtrees =>
+      div('.todo-list', [
+        button('.add-todo', 'Add todo'),
+
+        div('.items', vtrees)
+      ])
+    )
+  }
+
+  return sinks;
+}
+```
+
+But wait, there's more!
+---
+
+There is another common and hard to solve problem with lists in Cycle.js.
+
+Say our `TodoListItem` has a 'remove' button. What happens when you click it?
+
+A `TodoListItem` can't really remove itself. The state of the parent element needs to change.
+
+All that a `TodoListItem` can do is return a `remove$` stream as part of it's `sinks`, along with `DOM`.
+
+Normally, to solve this problem you would need to create a circular reference between the sinks of the items in your collections and the stream of `reducers` you're `fold`ing over. This is achieved using `imitate` in `xs` or `Subject` in `rx`. This can be tricky code to write and read, and often adds quite a bit of boilerplate to your component.
+
+When you create a `Collection` you can optionally pass a `sinkHandlers` object to map `sink` events on collection items to reducers in a stream.
+
+```js
+const todoListItems = Collection(TodoListItem, sources, {
+  remove$: function (todoListItems, item, event) {
+    return todoListItems.remove(item);
+  }
+});
+```
+
+Each of the functions provided in this object should match the name of a sink on the child components. Events coming out of the child sinks are then mapped using the provided function, and a reducer is returned.
+
+The reducers from these sink events are available as `collection.reducers`. They take in `state` and return `state`.
+
+In order to actually remove our `TodoListItem`s we need to merge our `reducers` into the stream of `reducers` we're `fold`ing over.
+
+```js
+const reducer$ = xs.merge(
+  addTodoReducer$,
+
+  todoListItems.reducers
+);
+
+const todoListItems$ = reducer$
+  .fold((items, reducer) => reducer(item), todoListItems);
+```
+
+All together now!
+
+```js
+function addItemReducer(todoListItems) {
+  return todoListItems.add();
+}
+
+function TodoList (sources) {
+  const todoListItems = Collection(TodoListItem, sources, {
+    remove$: function (todoListItems, item, event) {
+      return todoListItems.remove(item);
+    }
+  });
+
+  const addTodoClick$ = sources.DOM.select('.add-todo').events('click');
+
+  const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
+
+  const reducer$ = xs.merge( // NEW
+    addTodoReducer$,
+
+    todoListItems.reducers
+  );
+
+  const todoListItems$ = reducers$ // CHANGED
     .fold((items, reducer) => reducer(item), todoListItems);
 
   const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');

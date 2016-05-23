@@ -7,14 +7,15 @@ module.exports = {
   },
 
   globals: {
-    TodoListItem: () => ({}),
+    Collection: Collection,
+
+    xs: xs,
+
     sources: {
       DOM: {
         select: () => ({events: () => xs.of('foo')})
       }
     },
-
-    Collection: Collection,
 
     DOM: {
       select: function () {

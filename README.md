@@ -1,198 +1,198 @@
 # cycle-collections
 An easier way to do collections in Cycle
 
-Managing child components in Cycle.js can be a pain. The recommended approach is using "Dataflow Components", which are really just mini Cycle main functions. The tricky part is managing their addition, removal, updates and isolation.
+Components can be hard to manage in Cycle.js. They can be especially painful when you're working with lists of components.
 
-`cycle-collections` provides a little helper function to manage your collections. It automatically isolates and adds keys to your DOM streams, so you can easily write components that work how you expect.
+`Collection` is a helper function that makes managing your lists of components a cinch.
 
-Say we have a `Counter` component:
+How does it work?
+---
 
 <!-- share-code-between-examples -->
 
 ```js
-function Counter({DOM}) {
-  const add$ = DOM
-    .select('.add')
-    .events('click')
-    .mapTo(+1);
+import Collection from 'cycle-collections';
+```
 
-  const count$ = add$
-    .fold((total, change) => total + change, 0);
+Let's say we have a `TodoListItem` component, and we want to make a `TodoList`.
 
-  return {
-    DOM: count$.map(count => (
-      div('.counter', [
-        div('.count', count.toString()),
-        button('.add', '+')
+You can make a collection by calling `Collection()` and passing it a component.
+
+```js
+const todoListItems = Collection(TodoListItem);
+```
+
+It's common in Cycle that you want to pass your `sources` to your children. You can pass a `sources` object as the second argument. Each item in the collection will be passed these sources.
+
+```js
+const todoListItems = Collection(TodoListItem, sources);
+```
+
+A `collection` has a couple of helpful methods:
+
+  `collection.add(sources = {}): collection`
+
+Returns a new collection, with a new item added. You can pass a sources object, which will be merged with the sources object you passed when you created the `collection`. This is useful for passing `props$`.
+
+  `collection.remove(item): collection`
+
+Returns a new collection with the item removed.
+
+  `collection.asArray(): array`
+
+Returns an array of the items in the `collection`. This array is cloned from the internal one, so changes will not impact the state of the `collection`.
+
+Collections are **immutable**. This is because in Cycle.js values that change are represented as streams.
+
+So how do you build collections that change over time?
+---
+
+The way that you build state over time in Cycle.js is to use `fold` (aka `scan` in Rx).
+
+There is a particularly helpful pattern where you update a state object over time by `fold`ing over a stream of `reducers`.
+
+So what is a `reducer`?
+
+A `reducer` is a function that takes in `state` and returns an updated `state`.
+
+Say we have a `TodoList` function, and we want to be able to add new `TodoListItem`s.
+
+```js
+function TodoList (sources) {
+  const todoListItems = Collection(TodoListItem, sources);
+
+  const sinks = {
+    DOM: xs.of(
+      div('.todo-list', [
+        button('.add-todo', 'Add todo')
       ])
-    ))
+    )
   }
+
+  return sinks;
 }
 ```
 
-If we want to make a list of them, we can do it like so:
+We want to add a new TodoListItem to the collection when we click the 'Add todo' button.
+
+To do this we need to get a stream of reducers to update the collection.
+
+First we declare our reducer.
 
 ```js
-const counters = Collection(Counter, {DOM});
-
-counters.asArray();
-// => []
+function addItemReducer(todoListItems) {
+  return todoListItems.add();
+}
 ```
 
-We can add a new counter by calling `.add()`
+This will return a new copy of todoListItems with a new item added.
+
+Now we can take a stream of click events on the 'Add todo' button.
 
 ```js
-counters.add();
-
-counters.asArray();
-// => []
+const addTodoClick$ = sources.DOM.select('.add-todo').events('click');
 ```
 
-Why is counters still empty? Well, all of the methods on a `Collection` are immutable, aka they return a new collection, not modifying your current one.
-
-So how do you build up a collection? You store the result of the call to `.add()`
+We then map over our `addTodoClick` stream to make our `reducer` stream.
 
 ```js
-const updatedCounters = counters.add();
-
-updatedCounters.asArray();
-// => [{counter!}]
+const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
 ```
 
-You can also `.remove()` items:
+We can then build our collection stream by folding over our `reducer` stream.
+
 ```js
-const twoCounters = counters
-  .add()
-  .add();
-
-const firstCounter = counters.asArray()[0];
-
-updatedCounters
-  .remove(firstCounter)
-  .asArray()
-  .length
-// => 1
+const todoListItems$ = addTodoReducer$
+  .fold((items, reducer) => reducer(item), todoListItems);
 ```
 
-If the usage seems strange it's because `Collection` is designed to be used inside of the `scan`/`fold` of a Cycle.js component.
+There are a few things going in this line.
+ * We're folding over `addTodoReducer$`, which is a stream of functions that take `todoListItems` and return updated `todoListItems`
+ * We're calling each `reducer` and passing the current `items` into it. Each `reducer` returns an updated `items`.
+ * We're passing `todoListItems` as the initial value to `fold`, which is the empty collection be made above in our `TodoList` function.
 
-Here is an example of a CounterList function:
+ If we put it all together in our `TodoList` it looks like this:
 
 ```js
-function CounterList ({DOM}) {
-  const initialCounters = Collection(Counter, {DOM});
+function addItemReducer(todoListItems) {
+  return todoListItems.add();
+}
 
-  const addCounter$ = DOM
-    .select('.add-counter')
-    .events('click');
+function TodoList (sources) {
+  const todoListItems = Collection(TodoListItem, sources);
 
-  const counters$ = addCounter$
-    .fold((counters) => counters.add(), initialCounters);
+  const addTodoClick$ = sources.DOM.select('.add-todo').events('click');
 
-  const counterVtrees$ = Collection.pluck(counters$, 'DOM');
+  const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
 
-  return {
-    DOM: counterVtrees$.map(counterVtrees => (
-      div('.counter-list', [
-        button('.add-counter', 'Add counter'),
-        div('.counters', counterVtrees)
+  const todoListItems$ = addTodoReducer$
+    .fold((items, reducer) => reducer(item), todoListItems);
+
+  const sinks = {
+    DOM: xs.of(
+      div('.todo-list', [
+        button('.add-todo', 'Add todo')
       ])
-    ))
-  };
+    )
+  }
+
+  return sinks;
 }
 ```
 
-Here we encounter one of the most useful parts of `Collection`, `Collection.pluck`. `Collection.pluck` takes a stream where each item is a collection, and a property to pluck. It returns a stream of an array of each item's property combined.
+But wait, how do we get the `todoListItems` to show up in the `DOM`?
 
-Normally this is a map + flatten + combine but cycle-collection makes this one function call.
-
-There's another problem with collections in Cycle that can be very painful. Say we want our counters to have a remove button:
+`Collection.pluck` to the rescue!
 
 ```js
-function Counter({DOM}) {
-  const add$ = DOM
-    .select('.add')
-    .events('click')
-    .mapTo(+1);
+const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
+```
 
-  const count$ = add$
-    .fold((total, change) => total + change, 0);
+`Collection.pluck` takes a collection stream and a sink property and returns a stream of arrays of the latest value for each item. So for the `DOM` property each item in the stream is an array of vtrees. It handles the map/combine/flatten for you and also ensures that any `DOM` streams have unique keys on their vtree. This improves performance quite a bit and helps snabbdom tell the difference between each item.
 
-  const remove$ = DOM
-    .select('.remove')
-    .events('click');
+We can now map over `todoListItemVtrees$` to display our todoListItems.
 
-  return {
-    DOM: count$.map(count => (
-      div('.counter', [
-        div('.count', count.toString()),
-        button('.add', '+'),
-        button('.remove', 'x')
+```js
+const sinks = {
+  DOM: todoListItemVtrees$.map(vtrees =>
+    div('.todo-list', [
+      button('.add-todo', 'Add todo'),
+
+      div('.items', vtrees)
+    ])
+  )
+}
+```
+
+Here's that all together:
+
+```js
+function addItemReducer(todoListItems) {
+  return todoListItems.add();
+}
+
+function TodoList (sources) {
+  const todoListItems = Collection(TodoListItem, sources);
+
+  const addTodoClick$ = sources.DOM.select('.add-todo').events('click');
+
+  const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
+
+  const todoListItems$ = addTodoReducer$
+    .fold((items, reducer) => reducer(item), todoListItems);
+
+  const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
+
+  const sinks = {
+    DOM: todoListItemVtrees$.map(vtrees =>
+      div('.todo-list', [
+        button('.add-todo', 'Add todo'),
+
+        div('.items', vtrees)
       ])
-    )),
-
-    remove$
+    )
   }
-}
-```
 
-It's obvious that the `Counter` should `.select` the remove events stream, and display the button, but what happens when it's clicked? How can a component remove itself?
-
-It can't. Removing oneself is to change the state of the component that contains you. So `cycle-collections` allows for exactly that.
-
-When you create a collection, you can provide a object with functions to handle actions from your child components:
-
-```js
-const counterChildActions = {
-  remove$: function (counters, removedCounter) {
-    return counters.remove(removedCounter);
-  }
-}
-
-const counters = Collection(counters, {DOM}, counterChildActions);
-```
-
-We can get a stream of these child actions from `Collection.action$`:
-
-```js
-const counterChildActions = {
-  remove$: function (counters, removedCounter) {
-    return counters.remove(removedCounter);
-  }
-}
-
-const actions = {
-  addCounter: function (counters) {
-    return counters.add();
-  }
-}
-
-function CounterList ({DOM}) {
-  const initialCounters = Collection(Counter, {DOM}, counterChildActions);
-
-  const addCounter$ = DOM
-    .select('.add-counter')
-    .events('click')
-    .mapTo(actions.addCounter);
-
-  const action$ = xs.merge(
-    initialCounters.action$,
-
-    addCounter$
-  );
-
-  const counters$ = action$
-    .fold((counters, action) => action(counters), initialCounters);
-
-  const counterVtrees$ = Collection.pluck(counters$, 'DOM');
-
-  return {
-    DOM: counterVtrees$.map(counterVtrees => (
-      div('.counter-list', [
-        button('.add-counter', 'Add counter'),
-        div('.counters', counterVtrees)
-      ])
-    ))
-  };
+  return sinks;
 }
 ```

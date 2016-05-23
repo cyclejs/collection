@@ -72,4 +72,38 @@ describe('Collection', () => {
         .remove(item);
     });
   });
+
+  describe('.reducers', () => {
+    it('maps item sinks into a stream of reducers', (done) => {
+      function Removable ({props$}) {
+        return {
+          remove$: props$.mapTo('remove!')
+        };
+      }
+
+      const props$ = xs.create();
+
+      const collection = Collection(Removable, {}, {
+        remove$ (state, item, event) {
+          return state.remove(item);
+        }
+      }).add({props$});
+
+      collection.reducers.take(1).addListener({
+        next (reducer) {
+          assert.equal(reducer(collection).asArray().length, 0);
+
+          done();
+        },
+
+        error (err) {
+          throw err;
+        },
+
+        complete () {}
+      });
+
+      props$.shamefullySendNext('woo');
+    });
+  });
 });

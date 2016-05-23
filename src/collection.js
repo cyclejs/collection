@@ -39,26 +39,12 @@ function makeItem (component, sources, props) {
   return newItem;
 }
 
-function makeListener (reducers) {
-  return {
-    next (reducer) {
-      reducers.shamefullySendNext(reducer);
-    },
-
-    error (err) {
-      console.error(err);
-    },
-
-    complete () {}
-  };
-}
-
 function Collection (component, sources = {}, handlers = {}, items = [], reducers = xs.create()) {
   return {
     add (additionalSources = {}) {
       const newItem = makeItem(component, {...sources, ...additionalSources});
 
-      handlerStreams(component, newItem, handlers).addListener(makeListener(reducers));
+      reducers.imitate(handlerStreams(component, newItem, handlers));
 
       return Collection(
         component,

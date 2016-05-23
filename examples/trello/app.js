@@ -1,6 +1,6 @@
 import {div, button, textarea} from '@cycle/dom';
 import xs from 'xstream';
-import Collection from './collection';
+import Collection from '../../src/collection';
 
 const cardReducers = {
   toggleEditing (state) {

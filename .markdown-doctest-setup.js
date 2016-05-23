@@ -3,7 +3,7 @@ var xs = require('xstream').default;
 
 module.exports = {
   require: {
-    'cycle-collections': Collection
+    '@cycle/collection': Collection
   },
 
   globals: {

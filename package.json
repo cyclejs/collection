@@ -1,5 +1,5 @@
 {
-  "name": "cycle-collections",
+  "name": "@cycle/collection",
   "version": "1.0.0",
   "description": "Manage a collection of item in your dataflow component",
   "main": "lib/collection.js",

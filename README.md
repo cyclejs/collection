@@ -11,7 +11,7 @@ How does it work?
 <!-- share-code-between-examples -->
 
 ```js
-import Collection from 'cycle-collections';
+import Collection from '@cycle/collection';
 ```
 
 Let's say we have a `TodoListItem` component, and we want to make a `TodoList`.

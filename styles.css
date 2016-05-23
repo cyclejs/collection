@@ -1,5 +1,6 @@
 html, body {
   background: #102030;
+  color: white;
 }
 
 .lists {
@@ -40,6 +41,19 @@ html, body {
   width: 100%;
 }
 
-.main {
+.todo {
+  color: black;
+
+  font-size: 2rem;
+
+  background: #ddd;
+
+  height: 50px;
+
+  padding: 10px;
+
+  border-radius: 3px;
+
+  margin: 5px;
 }
 

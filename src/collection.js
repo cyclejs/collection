@@ -44,7 +44,7 @@ function Collection (component, sources = {}, handlers = {}, items = [], handler
     add (additionalSources = {}) {
       const newItem = makeItem(component, {...sources, ...additionalSources});
       const handler$ = handlerStreams(component, newItem, handlers);
-      reducers.imitate(handlerStreams(component, newItem, handlers));
+      reducers.imitate(handler$);
 
       return Collection(
         component,

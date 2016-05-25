@@ -39,11 +39,11 @@ function makeItem (component, sources, props) {
   return newItem;
 }
 
-function Collection (component, sources = {}, handlers = {}, items = [], reducers = xs.create()) {
+function Collection (component, sources = {}, handlers = {}, items = [], handler$Hash = {}, reducers = xs.create()) {
   return {
     add (additionalSources = {}) {
       const newItem = makeItem(component, {...sources, ...additionalSources});
-
+      const handler$ = handlerStreams(component, newItem, handlers);
       reducers.imitate(handlerStreams(component, newItem, handlers));
 
       return Collection(
@@ -51,16 +51,26 @@ function Collection (component, sources = {}, handlers = {}, items = [], reducer
         sources,
         handlers,
         [...items, newItem],
+        {
+          ...handler$Hash,
+          [newItem.id]: handler$
+        },
         reducers
       );
     },
 
     remove (itemForRemoval) {
+      const id = itemForRemoval && itemForRemoval.id;
+      id && handler$Hash[id] && handler$Hash[id].shamefullySendComplete();
       return Collection(
         component,
         sources,
         handlers,
         items.filter(item => item !== itemForRemoval),
+        {
+          ...handler$Hash,
+          [id]: null
+        },  
         reducers
       );
     },

@@ -17,7 +17,7 @@ function handlerStreams (component, item, handlers = {}) {
     const sink$ = item[sink];
 
     return sink$.map(event => {
-      event.stopPropagation && event.stopPropagation();
+      event && event.stopPropagation && event.stopPropagation();
 
       const handlerReducer = (state) => handler(state, item, event);
 

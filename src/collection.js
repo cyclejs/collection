@@ -39,39 +39,36 @@ function makeItem (component, sources, props) {
   return newItem;
 }
 
-function Collection (component, sources = {}, handlers = {}, items = [], handler$Hash = {}, reducers = xs.create()) {
+function collection(options, items = [], handler$Hash = {}) {
+  const { component, sources, handlers, reducers, proxy } = options;
+
   return {
     add (additionalSources = {}) {
       const newItem = makeItem(component, {...sources, ...additionalSources});
       const handler$ = handlerStreams(component, newItem, handlers);
-      reducers.imitate(handler$);
+      handler$.addListener(proxy);
 
-      return Collection(
-        component,
-        sources,
-        handlers,
+      return collection(
+        options,
         [...items, newItem],
         {
           ...handler$Hash,
-          [newItem.id]: handler$
-        },
-        reducers
+          [newItem.id]:handler$
+        }
       );
     },
 
     remove (itemForRemoval) {
       const id = itemForRemoval && itemForRemoval.id;
-      id && handler$Hash[id] && handler$Hash[id].shamefullySendComplete();
-      return Collection(
-        component,
-        sources,
-        handlers,
+      id && handler$Hash[id] && handler$Hash[id].removeListener(proxy);
+
+      return collection(
+        options,
         items.filter(item => item !== itemForRemoval),
         {
           ...handler$Hash,
           [id]: null
-        },  
-        reducers
+        }
       );
     },
 
@@ -80,7 +77,24 @@ function Collection (component, sources = {}, handlers = {}, items = [], handler
     },
 
     reducers
+  }
+}
+
+function Collection (component, sources = {}, handlers = {}) {
+  const reducers = xs.create();
+  const proxy = {
+    next(value) {
+      reducers.shamefullySendNext(value);
+    },
+    error(err) {
+      reducers.shamefullySendError(err);
+    },
+    complete() {
+      // Maybe autoremove here?
+    }
   };
+
+  return collection({ component, sources, handlers, reducers, proxy });
 }
 
 Collection.pluck = function pluck (collection$, sinkProperty) {

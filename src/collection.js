@@ -39,6 +39,47 @@ function makeItem (component, sources, props) {
   return newItem;
 }
 
+function collection(options, items = [], handler$Hash = {}) {
+  const { component, sources, handlers, reducers, proxy } = options;
+
+  return {
+    add (additionalSources = {}) {
+      const newItem = makeItem(component, {...sources, ...additionalSources});
+      const handler$ = handlerStreams(component, newItem, handlers);
+      handler$.addListener(proxy);
+
+      return collection(
+        options,
+        [...items, newItem],
+        {
+          ...handler$Hash,
+          [newItem.id]:handler$
+        }
+      );
+    },
+
+    remove (itemForRemoval) {
+      const id = itemForRemoval && itemForRemoval.id;
+      id && handler$Hash[id] && handler$Hash[id].removeListener(proxy);
+
+      return collection(
+        options,
+        items.filter(item => item !== itemForRemoval),
+        {
+          ...handler$Hash,
+          [id]: null
+        }
+      );
+    },
+
+    asArray () {
+      return items.slice(); // returns a copy of items to avoid mutation
+    },
+
+    reducers
+  }
+}
+
 function Collection (component, sources = {}, handlers = {}) {
   const reducers = xs.create();
   const proxy = {
@@ -51,43 +92,9 @@ function Collection (component, sources = {}, handlers = {}) {
     complete() {
       // Maybe autoremove here?
     }
-  }
+  };
 
-  return (function _Collection(items = [], handler$Hash = {}) {
-    return {
-      add (additionalSources = {}) {
-        const newItem = makeItem(component, {...sources, ...additionalSources});
-        const handler$ = handlerStreams(component, newItem, handlers);
-        handler$.addListener(proxy);
-
-        return _Collection(
-            [...items, newItem],
-            {
-              ...handler$Hash,
-              [newItem.id]: handler$
-            }
-        );
-      },
-
-      remove (itemForRemoval) {
-        const id = itemForRemoval && itemForRemoval.id;
-        id && handler$Hash[id] && handler$Hash[id].removeListener(proxy);
-        return _Collection(
-            items.filter(item => item !== itemForRemoval),
-            {
-              ...handler$Hash,
-              [id]: null
-            }
-        );
-      },
-
-      asArray () {
-        return items.slice(); // returns a copy of items to avoid mutation
-      },
-
-      reducers
-    }
-  })();
+  return collection({ component, sources, handlers, reducers, proxy });
 }
 
 Collection.pluck = function pluck (collection$, sinkProperty) {

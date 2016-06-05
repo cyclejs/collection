@@ -121,4 +121,67 @@ Collection.pluck = function pluck (collection$, sinkProperty) {
     .startWith([]);
 };
 
+// convert a stream of items' sources snapshots into a stream of collections
+Collection.gather = function gather (itemsState$ , component, sources, handlers, idAttribute = 'id') {
+  const makeDestroyable = component => (sources) => {
+    const sinks = component(sources);
+    return {
+      ...sinks,
+      remove$: xs.merge(sinks.remove$, destroy$)
+    };
+  };
+  const collection = Collection(makeDestroyable(component), sources, {
+    remove$: (collection, item) => collection.remove(item),
+    ...handlers
+  });
+  // each time a new item appears, it should be added to the collection
+  const addReducers$ = itemsState$
+    // get the added items at each step
+    .fold(
+      ({prevIds}, items) => ({
+        prevIds: items.map(item => item[idAttribute]),
+        addedItems: items.filter(item => !prevIds.includes(item[idAttribute]))
+      }),
+      {
+        prevIds: [],
+        addedItems: []
+      }
+    )
+    // turn each new item into a hash of source streams, tracking all the future updates
+    .map(({addedItems}) =>
+      addedItems.map(addedItem => {
+        const itemStateInfinite$ = itemsState$
+          .map(items =>
+            items.find(item => item[idAttribute] = addedItem[idAttribute])
+          );
+        // if an item isn't present if a new snapshot, it shall be destroyed
+        const destroy$ = itemStateInfinite$.filter(item => !item).take(1);
+        const itemState$ = itemStateInfinite$.endWhen(destroy$);
+        
+        return Object.keys(item)
+          .reduce((sources, key) => {
+            if (key === idAttribute) {
+              return sources;
+            }
+            
+            return itemState$
+              .map(state => state[key])
+              // if a particular source isn't present in a snapshot, it stays unchanged
+              .filter(Boolean);
+          }, {
+            destroy$
+          })
+      })
+    )
+    .map(itemsSources =>
+      itemsSources.reduce(
+        (collection, sources) => collection.add(sources),
+        collection
+      )
+    )
+  
+  return xs.merge(addReducers$, collection.reducers)
+      .fold((collection, reducer) => reducer(collection), collection);
+};
+
 export default Collection;

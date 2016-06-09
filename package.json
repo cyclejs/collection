@@ -5,7 +5,8 @@
   "main": "lib/collection.js",
   "files": ["lib/"],
   "scripts": {
-    "start": "babel-node examples/taskrunner/server.js",
+    "start": "babel-node examples/todolist/server.js",
+    "start/taskrunner": "babel-node examples/taskrunner/server.js",
     "test": "npm run test/node && npm run test/docs",
     "test/node": "mocha --compilers js:babel-core/register",
     "test/node-auto": "mocha --compilers js:babel-core/register --watch -R Min",

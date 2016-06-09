@@ -21,8 +21,7 @@ function Todo ({DOM, text, removeComplete$, filter$}) {
     .select('.complete')
     .events('change')
     .map(event => event.target.checked)
-    .startWith(false)
-    .remember();
+    .startWith(false);
 
   const removeIfComplete$ = complete$
     .map(complete => removeComplete$.filter(() => complete))
@@ -76,7 +75,7 @@ export default function TodoList ({DOM}) {
     DOM.select('.show-all').events('click').mapTo((completed) => true),
     DOM.select('.show-completed').events('click').mapTo((completed) => completed),
     DOM.select('.show-active').events('click').mapTo((completed) => !completed)
-  ).startWith((completed) => true).remember();
+  ).startWith((completed) => true);
 
   const todos = Collection(Todo, {DOM, removeComplete$, filter$}, {
     remove$ (todos, todo) {

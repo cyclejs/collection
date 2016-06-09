@@ -1,4 +1,5 @@
 import xs from 'xstream';
+import dropRepeats from 'xstream/extra/dropRepeats';
 import isolate from '@cycle/isolate';
 
 let _id = 0;
@@ -127,7 +128,7 @@ Collection.gather = function gather (itemsState$ , component, sources, handlers,
     const sinks = component(sources);
     return {
       ...sinks,
-      remove$: xs.merge(sinks.remove$, destroy$)
+      remove$: xs.merge(sinks.remove$ || xs.never(), sources.destroy$)
     };
   };
   const collection = Collection(makeDestroyable(component), sources, {
@@ -140,46 +141,63 @@ Collection.gather = function gather (itemsState$ , component, sources, handlers,
     .fold(
       ({prevIds}, items) => ({
         prevIds: items.map(item => item[idAttribute]),
-        addedItems: items.filter(item => !prevIds.includes(item[idAttribute]))
+        addedItems: items.filter(item => prevIds.indexOf(item[idAttribute]) === -1)
       }),
       {
         prevIds: [],
         addedItems: []
       }
     )
+    .map(({addedItems}) => addedItems)
+    .filter(addedItems => addedItems.length)
     // turn each new item into a hash of source streams, tracking all the future updates
-    .map(({addedItems}) =>
+    .map(addedItems =>
       addedItems.map(addedItem => {
         const itemStateInfinite$ = itemsState$
           .map(items =>
-            items.find(item => item[idAttribute] = addedItem[idAttribute])
+            items.find(item => item[idAttribute] === addedItem[idAttribute])
           );
         // if an item isn't present if a new snapshot, it shall be destroyed
         const destroy$ = itemStateInfinite$.filter(item => !item).take(1);
         const itemState$ = itemStateInfinite$.endWhen(destroy$);
         
-        return Object.keys(item)
+        return Object.keys(addedItem)
           .reduce((sources, key) => {
             if (key === idAttribute) {
               return sources;
             }
-            
-            return itemState$
-              .map(state => state[key])
-              // if a particular source isn't present in a snapshot, it stays unchanged
-              .filter(Boolean);
+
+            return {
+              ...sources,
+              [key]: itemState$
+                .map(state => state[key])
+                .startWith(addedItem[key])
+                // skip the snapshot if the value didn't change
+                .compose(dropRepeats((value, nextValue) => {
+                  if (value === nextValue) {
+                    return true;
+                  }
+                  try {
+                    if (JSON.stringify(value) === JSON.stringify(nextValue)) {
+                      return true;
+                    }
+                  } catch(e) {}
+                  // if not equal or not serializable
+                  return false;
+                }))
+                .remember()
+            };
           }, {
             destroy$
           })
       })
     )
-    .map(itemsSources =>
+    .map(itemsSources => collection =>
       itemsSources.reduce(
         (collection, sources) => collection.add(sources),
         collection
       )
-    )
-  
+    );
   return xs.merge(addReducers$, collection.reducers)
       .fold((collection, reducer) => reducer(collection), collection);
 };

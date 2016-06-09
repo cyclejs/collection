@@ -23,23 +23,28 @@
   },
   "dependencies": {
     "@cycle/isolate": "^1.3.2",
-    "xstream": "^4.0.1"
+    "xstream": "^4.0.3"
   },
   "devDependencies": {
-    "@cycle/xstream-run": "^1.1.0",
-    "babel-preset-es2015": "^6.1.18",
+    "@cycle/http": "^v9.0.0-rc6",
     "@cycle/dom": "^10.0.0-rc17",
+    "@cycle/xstream-run": "^1.1.0",
     "babel-cli": "^6.2.0",
     "babel-core": "^6.2.1",
     "babel-plugin-transform-object-rest-spread": "^6.8.0",
     "babel-polyfill": "^6.8.0",
+    "babel-preset-es2015": "^6.1.18",
     "babelify": "^7.3.0",
+    "body-parser": "^1.15.1",
     "browserify": "^12.0.1",
+    "browserify-middleware": "^7.0.0",
     "browserify-hmr": "^0.3.1",
     "budo": "^6.1.0",
+    "cors": "^2.7.1",
     "cycle-restart": "^0.0.14",
     "express": "^4.13.4",
     "markdown-doctest": "^0.6.0",
+    "method-override": "^2.3.6",
     "mocha": "^2.4.5",
     "uglifyify": "^3.0.1"
   }

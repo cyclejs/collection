@@ -8,7 +8,7 @@ function id () {
   return _id++;
 }
 
-function handlerStreams (component, item, handlers = {}) {
+function handlerStreams (item, handlers = {}) {
   const sinkStreams = Object.keys(item).map(sink => {
     if (handlers[sink] === undefined) {
       return null;
@@ -29,7 +29,7 @@ function handlerStreams (component, item, handlers = {}) {
   return xs.merge(...sinkStreams.filter(reducer => reducer !== null));
 }
 
-function makeItem (component, sources, props) {
+function makeItem (component, sources) {
   const newId = id();
 
   const newItem = isolate(component, newId.toString())(sources);
@@ -46,7 +46,7 @@ function collection(options, items = [], handler$Hash = {}) {
   return {
     add (additionalSources = {}) {
       const newItem = makeItem(component, {...sources, ...additionalSources});
-      const handler$ = handlerStreams(component, newItem, handlers);
+      const handler$ = handlerStreams(newItem, handlers);
       handler$.addListener(proxy);
 
       return collection(
@@ -123,7 +123,7 @@ Collection.pluck = function pluck (collection$, sinkProperty) {
 };
 
 // convert a stream of items' sources snapshots into a stream of collections
-Collection.gather = function gather (itemsState$ , component, sources, handlers, idAttribute = 'id') {
+Collection.gather = function gather (itemsState$ , component, sources, handlers = {}, idAttribute = 'id') {
   const makeDestroyable = component => (sources) => {
     const sinks = component(sources);
     return {

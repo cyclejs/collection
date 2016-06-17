@@ -193,7 +193,7 @@ function TodoList (sources) {
   const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
 
   const todoListItems$ = addTodoReducer$
-    .fold((items, reducer) => reducer(item), todoListItems);
+    .fold((items, reducer) => reducer(items), todoListItems);
 
   const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
 
@@ -248,7 +248,7 @@ const reducer$ = xs.merge(
 );
 
 const todoListItems$ = reducer$
-  .fold((items, reducer) => reducer(item), todoListItems);
+  .fold((items, reducer) => reducer(items), todoListItems);
 ```
 
 All together now!
@@ -276,7 +276,7 @@ function TodoList (sources) {
   );
 
   const todoListItems$ = reducers$ // CHANGED
-    .fold((items, reducer) => reducer(item), todoListItems);
+    .fold((items, reducer) => reducer(items), todoListItems);
 
   const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
 

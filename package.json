@@ -44,7 +44,7 @@
     "cors": "^2.7.1",
     "cycle-restart": "^0.0.14",
     "express": "^4.13.4",
-    "markdown-doctest": "^0.6.0",
+    "markdown-doctest": "^0.8.0",
     "method-override": "^2.3.6",
     "mocha": "^2.4.5",
     "uglifyify": "^3.0.1"

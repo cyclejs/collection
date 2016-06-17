@@ -27,8 +27,8 @@
     "xstream": "^4.0.1"
   },
   "devDependencies": {
-    "@cycle/http": "^v9.0.0-rc6",
-    "@cycle/dom": "^10.0.0-rc31",
+    "@cycle/http": "9.0.0-rc6",
+    "@cycle/dom": "10.0.0-rc31",
     "@cycle/xstream-run": "^3.0.0",
     "babel-cli": "^6.2.0",
     "babel-core": "^6.2.1",

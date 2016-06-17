@@ -9,19 +9,14 @@ function Widget ({props$}) {
   };
 }
 
-describe('Collection.pluck', (done) => {
+describe('Collection.pluck', () => {
   it('handles adding items', (done) => {
-    const collection = Collection(Widget, {}, {});
-
     const props$ = xs.create().startWith({foo: 'bar'});
 
-    const collectionUpdate$ = xs.fromArray([
-      (col) => col.add({props$}),
-      (col) => col.add({props$: xs.of({baz: 'quix'})})
-    ]);
-
-    const collection$ = collectionUpdate$
-      .fold((collection, action) => action(collection), collection);
+    const collection$ = Collection(Widget, {}, xs.of(
+      {props$},
+      {props$: xs.of({baz: 'quix'})}
+    ));
 
     const states$ = Collection.pluck(collection$, 'state$');
 
@@ -32,16 +27,15 @@ describe('Collection.pluck', (done) => {
       [{foo: 'bar'}, {baz: 'quix'}]
     ];
 
-    states$.take(4).addListener({
+    states$.take(expected.length).addListener({
       next (val) {
         assert.deepEqual(val, expected.shift());
-
-        if (expected.length === 0) {
-          done();
-        }
       },
       error (err) {done(err)},
-      complete () {}
+      complete () {
+        assert.equal(expected.length, 0);
+        done();
+      }
     });
   });
 });

@@ -5,7 +5,7 @@
   "main": "lib/collection.js",
   "files": ["lib/"],
   "scripts": {
-    "start": "babel-node examples/todolist/server.js",
+    "start": "babel-node examples/trello/server.js",
     "start/taskrunner": "babel-node examples/taskrunner/server.js",
     "test": "npm run test/node && npm run test/docs",
     "test/node": "mocha --compilers js:babel-core/register",
@@ -23,13 +23,13 @@
     "access": "public"
   },
   "dependencies": {
-    "@cycle/isolate": "^1.3.2",
-    "xstream": "^4.0.1"
+    "@cycle/isolate": "^1.4.0",
+    "xstream": "^5.0.5"
   },
   "devDependencies": {
-    "@cycle/http": "^v9.0.0-rc6",
-    "@cycle/dom": "^10.0.0-rc31",
-    "@cycle/xstream-run": "^3.0.0",
+    "@cycle/http": "^9.0.0-rc8",
+    "@cycle/dom": "10.0.0-rc33",
+    "@cycle/xstream-run": "^3.0.1",
     "babel-cli": "^6.2.0",
     "babel-core": "^6.2.1",
     "babel-plugin-transform-object-rest-spread": "^6.8.0",

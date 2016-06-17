@@ -10,100 +10,117 @@ function Widget ({props$}) {
 }
 
 describe('Collection', () => {
-  const collection = Collection(Widget);
 
-  it('takes an object of sources to pass to each item', () => {
+  it('takes an object of sources to pass to each item', (done) => {
     const props$ = xs.empty();
 
-    const collection = Collection(Widget, {props$});
+    const collection$ = Collection(Widget, {props$}, xs.of(null));
 
-    assert.equal(collection.add().asArray()[0].state$, props$);
-  });
+    const expected = [[], [props$]];
 
-  describe('.add', () => {
-    it('starts out empty', () => {
-      assert.equal(collection.asArray().length, 0);
-    });
+    collection$.take(expected.length).addListener({
+      next (items) {
+        const expectedItems = expected.shift();
+        assert.equal(items.length, expectedItems.length);
 
-    it('adds items', () => {
-      assert.equal(collection.add().asArray().length, 1);
-    });
-
-    it('is immutable', () => {
-      const collectionWithOneItem = collection.add();
-
-      assert.equal(collectionWithOneItem.asArray().length, 1);
-
-      collectionWithOneItem.add();
-      collectionWithOneItem.add();
-      collectionWithOneItem.add();
-
-      assert.equal(collectionWithOneItem.asArray().length, 1);
-      assert.equal(collectionWithOneItem.add().asArray().length, 2);
-    });
-
-    it('takes an object of additional sources to be passed to the item', () => {
-      const props$ = xs.empty();
-
-      const collectionWithOneItemWithProps = collection.add({props$});
-
-      assert.equal(props$, collectionWithOneItemWithProps.asArray()[0].state$);
-    });
-  });
-
-  describe('.remove', () => {
-    it('removes the given item from the collection', () => {
-      const collectionWithOneItem = collection.add();
-
-      const item = collectionWithOneItem.asArray()[0];
-
-      const emptyCollection = collectionWithOneItem.remove(item);
-
-      assert.equal(emptyCollection.asArray().length, 0);
-    });
-
-    it("doesn't explode if the item isn't present", () => {
-      const collectionWithOneItem = collection.add();
-
-      const item = collectionWithOneItem.asArray()[0];
-
-      collectionWithOneItem
-        .remove(item)
-        .remove(item);
-    });
-  });
-
-  describe('.reducers', () => {
-    it('maps item sinks into a stream of reducers', (done) => {
-      function Removable ({props$}) {
-        return {
-          remove$: props$.mapTo('remove!')
-        };
+        items.forEach(item => {
+          assert.equal(item.state$, expectedItems.shift());
+        });
+      },
+      error (err) {done(err)},
+      complete () {
+        assert.equal(expected.length, 0);
+        done();
       }
+    });
+  });
 
-      const props$ = xs.create();
+  it('is immutable', (done) => {
+    const collection$ = Collection(Widget, {}, xs.of(null, null, null));
 
-      const collection = Collection(Removable, {}, {
-        remove$ (state, item, event) {
-          return state.remove(item);
-        }
-      }).add({props$});
+    const expected = [0, 1, 2, 3];
+    const real = [];
 
-      collection.reducers.take(1).addListener({
-        next (reducer) {
-          assert.equal(reducer(collection).asArray().length, 0);
+    collection$.take(expected.length).addListener({
+      next (items) {
+        real.push(items);
 
-          done();
-        },
+        real.forEach((items, i) => {
+          assert.equal(items.length, expected[i]);
+        });
+      },
+      error (err) {done(err)},
+      complete () {
+        assert.equal(real.length, expected.length);
+        done();
+      }
+    });
+  });
 
-        error (err) {
-          throw err;
-        },
+  it('adds multiple items at once', (done) => {
+    const collection$ = Collection(Widget, {}, xs.of(null, [null, null]));
 
-        complete () {}
-      });
+    const expected = [0, 1, 3];
 
-      props$.shamefullySendNext('woo');
+    collection$.take(expected.length).addListener({
+      next (items) {
+        assert.equal(items.length, expected.shift());
+      },
+      error (err) {done(err)},
+      complete () {
+        assert.equal(expected.length, 0);
+        done();
+      }
+    });
+  });
+
+  it('takes an object of additional sources to be passed to the item', (done) => {
+    const props$ = xs.empty();
+
+    const collection$ = Collection(Widget, {}, xs.of({props$}));
+
+    const expected = [[], [props$]]
+
+    collection$.take(expected.length).addListener({
+      next (items) {
+        const expectedItems = expected.shift();
+        assert.equal(items.length, expectedItems.length);
+
+        items.forEach(item => {
+          assert.equal(item.state$, expectedItems.shift());
+        });
+      },
+      error (err) {done(err)},
+      complete () {
+        assert.equal(expected.length, 0);
+        done();
+      }
+    });
+  });
+
+  it('takes a name of sink responsible for removal', (done) => {
+    function Destroyable ({props$}) {
+      return {
+        destroy$: props$
+      };
+    }
+
+    const props$ = xs.periodic(100).take(1);
+
+    const collection$ = Collection(Destroyable, {}, xs.of({props$}), 'destroy$');
+
+    const expected = [0, 1, 0];
+    const completed = false;
+
+    collection$.take(expected.length).addListener({
+      next (items) {
+        assert.equal(items.length, expected.shift());
+      },
+      error (err) {done(err)},
+      complete () {
+        assert.equal(expected.length, 0);
+        done();
+      }
     });
   });
 });

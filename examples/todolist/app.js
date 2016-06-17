@@ -27,7 +27,7 @@ function Todo ({DOM, text, removeComplete$, filter$}) {
     .map(complete => removeComplete$.filter(() => complete))
     .flatten();
 
-  function viewUnlessFiltered (complete, filter) {
+  function viewUnlessFiltered ([complete, filter]) {
     if (filter(complete)) {
       return todoView(complete, text);
     } else {
@@ -36,7 +36,7 @@ function Todo ({DOM, text, removeComplete$, filter$}) {
   }
 
   return {
-    DOM: xs.combine(viewUnlessFiltered, complete$, filter$),
+    DOM: xs.combine(complete$, filter$).map(viewUnlessFiltered),
 
     remove$: xs.merge(removeClick$, removeIfComplete$),
 
@@ -44,11 +44,7 @@ function Todo ({DOM, text, removeComplete$, filter$}) {
   };
 }
 
-function addTodoReducer (todos, text) {
-  return todos.add({text});
-}
-
-function view (todoVtrees, todosComplete) {
+function view ([todoVtrees, todosComplete]) {
   const todosCount = todosComplete.length;
   const completeCount = todosComplete.filter(complete => complete).length;
 
@@ -77,12 +73,6 @@ export default function TodoList ({DOM}) {
     DOM.select('.show-active').events('click').mapTo((completed) => !completed)
   ).startWith((completed) => true);
 
-  const todos = Collection(Todo, {DOM, removeComplete$, filter$}, {
-    remove$ (todos, todo) {
-      return todos.remove(todo);
-    }
-  });
-
   const addTodoClick$ = DOM
     .select('.add-todo')
     .events('click');
@@ -94,22 +84,15 @@ export default function TodoList ({DOM}) {
     .startWith('');
 
   const addTodo$ = newTodoText$
-    .map(text => addTodoClick$.mapTo((state) => addTodoReducer(state, text)))
+    .map(text => addTodoClick$.mapTo({text}))
     .flatten();
 
-  const reducer$ = xs.merge(
-    addTodo$,
-
-    todos.reducers
-  );
-
-  const todos$ = reducer$
-    .fold((todos, reducer) => reducer(todos), todos);
+  const todos$ = Collection(Todo, {DOM, removeComplete$, filter$}, addTodo$);
 
   const todoVtrees$ = Collection.pluck(todos$, 'DOM');
   const todosComplete$ = Collection.pluck(todos$, 'complete$');
 
   return {
-    DOM: xs.combine(view, todoVtrees$, todosComplete$)
+    DOM: xs.combine(todoVtrees$, todosComplete$).map(view)
   };
 }

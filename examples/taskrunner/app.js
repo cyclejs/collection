@@ -90,7 +90,7 @@ export default function TaskRunner ({DOM, HTTP}) {
     )
     .startWith([]);
 
-  const tasks$ = Collection.gather(tasksState$, Task, {DOM, deleteComplete$, filter$});
+  const tasks$ = Collection.gather(Task, {DOM, deleteComplete$, filter$}, tasksState$);
 
   const addTaskClick$ = DOM
     .select('.add-task')

@@ -32,19 +32,27 @@ function TodoListItem (sources) {
 
 You can make a collection stream by calling `Collection()` and passing it a component.
 
-`const todoListItems$ = Collection(TodoListItem);`
+```js
+const todoListItems$ = Collection(TodoListItem);
+```
 
 It's common in Cycle that you want to pass your `sources` to your children. You can pass a `sources` object as the second argument. Each item in the collection will be passed these sources.
 
-`const todoListItems$ = Collection(TodoListItem, sources);`
+```js
+const todoListItems$ = Collection(TodoListItem, sources);
+```
 
 To actually populate the collection, you pass an `add$` stream. Its emitted values may be sources objects, which will be merged with the sources object you passed when you created the `collection$`. This is useful for passing `props$`.
 
-`const todoListItems$ = Collection(TodoListItem, sources, xs.of(additionalSources));`
+```js
+const todoListItems$ = Collection(TodoListItem, sources, xs.of(additionalSources));
+```
 
 `add$` can emit an array, if multiple items should be added at once.
 
-`const todoListItems$ = Collection(TodoListItem, sources, xs.of([firstSources, secondSources]));`
+```js
+const todoListItems$ = Collection(TodoListItem, sources, xs.of([firstSources, secondSources]));
+```
 
 `Collection()` returns a stream with arrays of items as values. Those arrays are cloned from internal ones, so changes will not impact the state of the `collection$`.
 

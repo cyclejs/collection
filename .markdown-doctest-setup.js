@@ -17,6 +17,10 @@ module.exports = {
       }
     },
 
+    additionalSources: {},
+    firstSources: {},
+    secondSources: {},
+
     DOM: {
       select: function () {
         return {

@@ -20,6 +20,11 @@ module.exports = {
     additionalSources: {},
     firstSources: {},
     secondSources: {},
+    
+    add$: xs.empty(),
+
+    Task() {},
+    fetchedTasks$: xs.of([]),
 
     DOM: {
       select: function () {

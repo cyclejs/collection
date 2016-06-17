@@ -24,11 +24,11 @@
   },
   "dependencies": {
     "@cycle/isolate": "^1.4.0",
-    "xstream": "^5.0.5"
+    "xstream": "^5.0.6"
   },
   "devDependencies": {
-    "@cycle/http": "^9.0.0-rc8",
-    "@cycle/dom": "10.0.0-rc33",
+    "@cycle/http": "^9.0.0-rc9",
+    "@cycle/dom": "10.0.0-rc34",
     "@cycle/xstream-run": "^3.0.1",
     "babel-cli": "^6.2.0",
     "babel-core": "^6.2.1",

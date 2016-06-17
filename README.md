@@ -86,7 +86,9 @@ Wait, how do we get the `todoListItems` to show up in the `DOM`?
 
 `Collection.pluck` to the rescue!
 
-`const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');`
+```js
+const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
+```
 
 `Collection.pluck` takes a collection stream and a sink property and returns a stream of arrays of the latest value for each item. So for the `DOM` property each item in the stream is an array of vtrees. It handles the map/combine/flatten for you and also ensures that any `DOM` streams have unique keys on their vtree. This improves performance quite a bit and helps snabbdom tell the difference between each item.
 
@@ -132,7 +134,9 @@ Normally, to solve this problem you would need to create a circular reference be
 
 When you create a `Collection` you can optionally pass a `removeSinkName` string to specify that corresponding sink will trigger item's removal.
 
-`const todoListItems = Collection(TodoListItem, sources, add$, 'remove$'); // 'remove$' is the default value, so it might be omitted as well`
+```js
+const todoListItems = Collection(TodoListItem, sources, add$, 'remove$'); // 'remove$' is the default value, so it might be omitted as well
+```
 
 All together now!
 
@@ -166,7 +170,9 @@ And how do we process fetched data?
 
 It's a quite common use case when a collection is built from fetched data. Usually it comes in a form of items' state snapshot. `Collection.gather` takes a stream of those snapshots and turns into a stream of collections. Its signature is similar to `Collection`, but it takes `itemState$` instead of `add$`, plus it has an optional `idAttribute` argument, which defaults to `'id'`.
 
-`const taskList$ = Collection.gather(Task, sources, fetchedTasks$, 'remove$', 'uid')`
+```js
+const tasks$ = Collection.gather(Task, sources, fetchedTasks$, 'remove$', 'uid')
+```
 
 It uses a set of rules:
 
@@ -174,3 +180,12 @@ It uses a set of rules:
 - items that weren't present in the previous snapshot are added to collection.
 - each added item tracks it's own state, turning the sequence of each field's values into a source.
 - item is removed from collection if it's no more present in a snapshot.
+
+So what if our components issue HTTP requests?
+---
+
+There are kinds of sinks that rather represent actions than states. HTTP sink is a good example. If we want to get a stream of all HTTP requests issued by collection's items, `Collection.merge` will provide us one. It works basically the same as `Collection.pluck`, but merges the sinks instead of combining them into array.
+
+```js
+const tasksRequest$ = Collection.merge(tasks$, 'HTTP');
+```

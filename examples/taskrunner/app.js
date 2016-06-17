@@ -27,14 +27,14 @@ function Task ({DOM, props, deleteComplete$, filter$}) {
 
   const delete$ = xs.merge(deleteClick$, deleteIfComplete$);
 
-  const viewUnlessFiltered  = (props, filter) =>
+  const viewUnlessFiltered  = ([props, filter]) =>
     taskView({
       ...props,
       visible: filter(props.status)
     });
 
   return {
-    DOM: xs.combine(viewUnlessFiltered, props, filter$),
+    DOM: xs.combine(props, filter$).map(viewUnlessFiltered),
     complete$: props.map(({status}) => status === 'complete').compose(dropRepeats()),
     HTTP: props
       .map(({id}) => delete$.mapTo({
@@ -50,7 +50,7 @@ function addTodoReducer (todos, text) {
   return todos.add({text});
 }
 
-function view (tasksVtrees, tasksComplete) {
+function view ([tasksVtrees, tasksComplete]) {
   const tasksCount = tasksComplete.length;
   const completeCount = tasksComplete.filter(complete => complete).length;
 
@@ -115,17 +115,14 @@ export default function TaskRunner ({DOM, HTTP}) {
     url: '/tasks',
     method: 'GET',
     type: 'application/json'
-  })
+  });
 
   const tasksVtrees$ = Collection.pluck(tasks$, 'DOM');
   const tasksComplete$ = Collection.pluck(tasks$, 'complete$');
-  const tasksRequest$ = tasks$
-    .map(collection => collection.asArray().map(item => item.HTTP))
-    .map(sinkStreams => xs.merge(...sinkStreams))
-    .flatten();
+  const tasksRequest$ = Collection.merge(tasks$, 'HTTP');
 
   return {
-    DOM: xs.combine(view, tasksVtrees$, tasksComplete$),
+    DOM: xs.combine(tasksVtrees$, tasksComplete$).map(view),
     HTTP: xs.merge(
       addTask$,
       refreshList$,

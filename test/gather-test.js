@@ -142,14 +142,12 @@ describe('Collection.gather', () => {
   
   it('removes the items that are no more present', (done) => {
     const itemState$ = xs.of([
-        { id: 0, props: {foo: 'bar'}},
-        { id: 1, props: {baz: 'quix'}}
-      ],
-      [
-        { id: 0, props: {foo: 'bar'}}
-      ])
-      // items should be added asynchronously for collection.reducers to work properly
-      .compose(delay());
+      { id: 0, props: {foo: 'bar'}},
+      { id: 1, props: {baz: 'quix'}}
+    ],
+    [
+      { id: 0, props: {foo: 'bar'}}
+    ]);
     const collection$ = Collection.gather(Widget, {}, itemState$);
 
     const expected = [

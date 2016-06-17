@@ -117,7 +117,7 @@ We can then build our collection stream by folding over our `reducer` stream.
 
 ```js
 const todoListItems$ = addTodoReducer$
-  .fold((items, reducer) => reducer(item), todoListItems);
+  .fold((items, reducer) => reducer(items), todoListItems);
 ```
 
 There are a few things going in this line.
@@ -140,7 +140,7 @@ function TodoList (sources) {
   const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
 
   const todoListItems$ = addTodoReducer$
-    .fold((items, reducer) => reducer(item), todoListItems);
+    .fold((items, reducer) => reducer(items), todoListItems);
 
   const sinks = {
     DOM: xs.of(

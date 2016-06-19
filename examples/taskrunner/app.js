@@ -6,8 +6,8 @@ import Collection from '../../src/collection';
 function taskView ({status, text, visible}) {
   return (
     div('.task', {
-        style: visible ? {} : {display: 'none'}
-      }, [
+      style: visible ? {} : {display: 'none'}
+    }, [
       span('.status', status),
       ': ',
       span('.text', text),
@@ -44,10 +44,6 @@ function Task ({DOM, props, deleteComplete$, filter$}) {
       }))
       .flatten()
   };
-}
-
-function addTodoReducer (todos, text) {
-  return todos.add({text});
 }
 
 function view ([tasksVtrees, tasksComplete]) {

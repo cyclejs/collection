@@ -20,7 +20,7 @@ function makeItem (component, sources) {
   return newItem;
 }
 
-function collection(options, items = []) {
+function collection (options, items = []) {
   const { component, sources, removeSinkName } = options;
 
   return {
@@ -45,7 +45,7 @@ function collection(options, items = []) {
     asArray () {
       return items.slice(); // returns a copy of items to avoid mutation
     }
-  }
+  };
 }
 
 function Collection (component, sources = {}, add$ = xs.empty(), removeSinkName = 'remove$') {
@@ -132,14 +132,14 @@ Collection.gather = function gather (component, sources, items$, removeSinkName 
   }
 
   // finds items not present in previous snapshot
-  function findNewItems({prevIds}, items) {
+  function findNewItems ({prevIds}, items) {
     return {
       prevIds: items.map(item => item[idAttribute]),
       addedItems: items.filter(item => prevIds.indexOf(item[idAttribute]) === -1)
     };
   }
 
-  function compareJSON(value, nextValue) {
+  function compareJSON (value, nextValue) {
     if (value === nextValue) {
       return true;
     }
@@ -147,13 +147,13 @@ Collection.gather = function gather (component, sources, items$, removeSinkName 
       if (JSON.stringify(value) === JSON.stringify(nextValue)) {
         return true;
       }
-    } catch(e) {}
+    } catch (e) {}
     // if not equal or not serializable
     return false;
   }
 
   // turn a new item into a hash of source streams, tracking all the future updates
-  function itemToSourceStreams(addedItem, itemsState$) {
+  function itemToSourceStreams (addedItem, itemsState$) {
     const itemStateInfinite$ = itemsState$
       .map(items =>
         items.find(item => item[idAttribute] === addedItem[idAttribute])
@@ -184,7 +184,7 @@ Collection.gather = function gather (component, sources, items$, removeSinkName 
   }
 
   const itemsState$ = items$.remember();
-  
+
   const add$ = itemsState$
     // get the added items at each step
     .fold(findNewItems, {prevIds: [], addedItems: []})

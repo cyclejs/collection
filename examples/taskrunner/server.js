@@ -5,6 +5,7 @@ import cors from 'cors';
 import express from 'express';
 import hotModuleReloading from 'browserify-hmr';
 import methodOverride from 'method-override';
+import path from 'path';
 
 const app = express();
 
@@ -15,7 +16,7 @@ app.use(cors());
 let state = {
   _id: 0,
   tasks : [],
-  add(props) {
+  add (props) {
     const id = String(this._id++);
     this.tasks = [...this.tasks, {
       ...props,
@@ -28,11 +29,11 @@ let state = {
     );
     return this.tasks;
   },
-  remove(id) {
+  remove (id) {
     this.tasks = this.tasks.filter(task => task.id !== id);
     return this.tasks;
   },
-  update(id, patch) {
+  update (id, patch) {
     this.tasks = this.tasks.map(task => task.id === id
       ? { ...task, ...patch }
       : task
@@ -43,7 +44,7 @@ let state = {
 
 app.use(express.static(process.cwd()));
 
-app.get('/bundle.js', browserify(__dirname + '/index.js', {
+app.get('/bundle.js', browserify(path.join(__dirname, '/index.js'), {
   transform: babelify,
   plugin: hotModuleReloading
 }));

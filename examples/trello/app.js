@@ -94,7 +94,7 @@ function List ({DOM, props$}) {
     .select('.add-card')
     .events('click')
     .mapTo(null);
-    
+
   const cards$ = Collection(Card, {DOM}, addCard$);
 
   const cardsVtrees$ = Collection.pluck(cards$, 'DOM');

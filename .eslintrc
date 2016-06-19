@@ -1,0 +1,12 @@
+{
+    "rules": {
+      "key-spacing": 0,
+      "no-multi-spaces": 0,
+      "arrow-parens": 0
+    },
+    "env": {
+        "es6": true,
+        "browser": true
+    },
+    "extends": "eslint-config-semistandard"
+}

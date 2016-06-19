@@ -1,4 +1,5 @@
 import xs from 'xstream';
+import delay from 'xstream/extra/delay';
 import dropRepeats from 'xstream/extra/dropRepeats';
 import isolate from '@cycle/isolate';
 
@@ -8,141 +9,137 @@ function id () {
   return _id++;
 }
 
-function handlerStreams (item, handlers = {}) {
-  const sinkStreams = Object.keys(item).map(sink => {
-    if (handlers[sink] === undefined) {
-      return null;
-    }
-
-    const handler = handlers[sink];
-    const sink$ = item[sink];
-
-    return sink$.map(event => {
-      event && event.stopPropagation && event.stopPropagation();
-
-      const handlerReducer = (state) => handler(state, item, event);
-
-      return handlerReducer;
-    });
-  });
-
-  return xs.merge(...sinkStreams.filter(reducer => reducer !== null));
-}
-
 function makeItem (component, sources) {
   const newId = id();
 
   const newItem = isolate(component, newId.toString())(sources);
 
-  newItem.id = newId;
-  newItem.name = component.name;
+  newItem._id = newId;
+  newItem._name = component.name;
 
   return newItem;
 }
 
-function collection(options, items = [], handler$Hash = {}) {
-  const { component, sources, handlers, reducers, proxy } = options;
+function collection (options, items = []) {
+  const { component, sources, removeSinkName } = options;
 
   return {
     add (additionalSources = {}) {
       const newItem = makeItem(component, {...sources, ...additionalSources});
-      const handler$ = handlerStreams(newItem, handlers);
-      handler$.addListener(proxy);
+      const removeSink = newItem[removeSinkName] || xs.empty();
+      newItem._remove$ = removeSink.take(1).mapTo(newItem);
 
       return collection(
         options,
-        [...items, newItem],
-        {
-          ...handler$Hash,
-          [newItem.id]:handler$
-        }
+        [...items, newItem]
       );
     },
 
     remove (itemForRemoval) {
-      const id = itemForRemoval && itemForRemoval.id;
-      id && handler$Hash[id] && handler$Hash[id].removeListener(proxy);
-
       return collection(
         options,
-        items.filter(item => item !== itemForRemoval),
-        {
-          ...handler$Hash,
-          [id]: null
-        }
+        items.filter(item => item !== itemForRemoval)
       );
     },
 
     asArray () {
       return items.slice(); // returns a copy of items to avoid mutation
-    },
-
-    reducers
-  }
-}
-
-function Collection (component, sources = {}, handlers = {}) {
-  const reducers = xs.create();
-  const proxy = {
-    next(value) {
-      reducers.shamefullySendNext(value);
-    },
-    error(err) {
-      reducers.shamefullySendError(err);
-    },
-    complete() {
-      // Maybe autoremove here?
     }
   };
+}
 
-  return collection({ component, sources, handlers, reducers, proxy });
+function Collection (component, sources = {}, add$ = xs.empty(), removeSinkName = 'remove$') {
+  const removeProxy$ = xs.create();
+  const addReducer$ = add$.map(sourcesList => collection => {
+    if (Array.isArray(sourcesList)) {
+      // multiple items
+      return sourcesList.reduce((collection, sources) => collection.add(sources), collection);
+    } else {
+      // single item
+      return collection.add(sourcesList);
+    }
+  });
+  const removeReducer$ = removeProxy$.map(item => collection => collection.remove(item));
+  const reducer$ = xs.merge(addReducer$, removeReducer$);
+
+  const emptyCollection = collection({ component, sources, removeSinkName });
+  const collection$ = reducer$
+    .fold((collection, reducer) => reducer(collection), emptyCollection)
+    .map(collection => collection.asArray());
+
+  const remove$ = Collection.merge(collection$, '_remove$');
+  removeProxy$.imitate(remove$);
+
+  return collection$;
 }
 
 Collection.pluck = function pluck (collection$, sinkProperty) {
   const sinks = {};
 
   function sink$ (item) {
-    const key = `${item.name}.${item.id}.${sinkProperty}`;
+    const key = `${item._name}.${item._id}.${sinkProperty}`;
 
     if (sinks[key] === undefined) {
-      if (sinkProperty === 'DOM') {
-        sinks[key] = item[sinkProperty].map(vtree => ({...vtree, key})).remember();
-      } else {
-        sinks[key] = item[sinkProperty].remember();
-      }
+      const sink = sinkProperty === 'DOM'
+        ? item[sinkProperty].map(vtree => ({...vtree, key}))
+        : item[sinkProperty];
+      sinks[key] = sink.remember();
     }
 
     return sinks[key];
   }
 
   return collection$
-    .map(collection => collection.asArray().map(item => sink$(item)))
-    .map(sinkStreams => xs.combine((...items) => items, ...sinkStreams))
+    .map(items => items.map(item => sink$(item)))
+    .map(sinkStreams => xs.combine(...sinkStreams))
     .flatten()
     .startWith([]);
 };
 
+Collection.merge = function merge (collection$, sinkProperty) {
+  const sinks = {};
+
+  function sink$ (item) {
+    const key = `${item._name}.${item._id}.${sinkProperty}`;
+
+    if (sinks[key] === undefined) {
+      const sink = sinkProperty === 'DOM'
+        ? item[sinkProperty].map(vtree => ({...vtree, key}))
+        : item[sinkProperty];
+      // prevent sink from early completion and reinitialization
+      sinks[key] = xs.merge(sink, xs.never());
+    }
+
+    return sinks[key];
+  }
+
+  return collection$
+    .map(items => items.map(item => sink$(item)))
+    .map(sinkStreams => xs.merge(...sinkStreams))
+    .flatten();
+};
+
 // convert a stream of items' sources snapshots into a stream of collections
-Collection.gather = function gather (itemsState$ , component, sources, handlers = {}, idAttribute = 'id') {
+Collection.gather = function gather (component, sources, items$, removeSinkName = 'remove$', idAttribute = 'id') {
   function makeDestroyable (component) {
     return (sources) => {
       const sinks = component(sources);
       return {
         ...sinks,
-        remove$: xs.merge(sinks.remove$ || xs.never(), sources.destroy$)
+        [removeSinkName]: xs.merge(sinks[removeSinkName] || xs.empty(), sources._destroy$)
       };
     };
   }
 
   // finds items not present in previous snapshot
-  function findNewItems({prevIds}, items) {
+  function findNewItems ({prevIds}, items) {
     return {
       prevIds: items.map(item => item[idAttribute]),
       addedItems: items.filter(item => prevIds.indexOf(item[idAttribute]) === -1)
     };
   }
 
-  function compareJSON(value, nextValue) {
+  function compareJSON (value, nextValue) {
     if (value === nextValue) {
       return true;
     }
@@ -150,20 +147,20 @@ Collection.gather = function gather (itemsState$ , component, sources, handlers 
       if (JSON.stringify(value) === JSON.stringify(nextValue)) {
         return true;
       }
-    } catch(e) {}
+    } catch (e) {}
     // if not equal or not serializable
     return false;
   }
 
   // turn a new item into a hash of source streams, tracking all the future updates
-  function itemToSourceStreams(addedItem) {
+  function itemToSourceStreams (addedItem, itemsState$) {
     const itemStateInfinite$ = itemsState$
       .map(items =>
         items.find(item => item[idAttribute] === addedItem[idAttribute])
       );
     // if an item isn't present if a new snapshot, it shall be destroyed
-    const destroy$ = itemStateInfinite$.filter(item => !item).take(1);
-    const itemState$ = itemStateInfinite$.endWhen(destroy$);
+    const _destroy$ = itemStateInfinite$.filter(item => !item).take(1);
+    const itemState$ = itemStateInfinite$.endWhen(_destroy$.compose(delay()));
 
     return Object.keys(addedItem)
       .reduce((sources, key) => {
@@ -182,33 +179,20 @@ Collection.gather = function gather (itemsState$ , component, sources, handlers 
             .remember()
         };
       }, {
-        destroy$
+        _destroy$
       });
   }
 
-  function addAllItems(itemsSources) {
-    return collection =>
-      itemsSources.reduce(
-        (collection, sources) => collection.add(sources),
-        collection
-      );
-  }
+  const itemsState$ = items$.remember();
 
-  const collection = Collection(makeDestroyable(component), sources, {
-    remove$: (collection, item) => collection.remove(item),
-    ...handlers
-  });
-
-  const addReducers$ = itemsState$
+  const add$ = itemsState$
     // get the added items at each step
     .fold(findNewItems, {prevIds: [], addedItems: []})
     .map(({addedItems}) => addedItems)
     .filter(addedItems => addedItems.length)
-    .map(addedItems => addedItems.map(itemToSourceStreams))
-    .map(addAllItems);
+    .map(addedItems => addedItems.map(item => itemToSourceStreams(item, itemsState$)));
 
-  return xs.merge(addReducers$, collection.reducers)
-    .fold((collection, reducer) => reducer(collection), collection);
+  return Collection(makeDestroyable(component), sources, add$, removeSinkName);
 };
 
 export default Collection;

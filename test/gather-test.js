@@ -9,13 +9,13 @@ function Widget ({props}) {
   };
 }
 
-describe('Collection.gather', (done) => {
+describe('Collection.gather', () => {
   it('adds initial items', (done) => {
     const itemState$ = xs.of([
       { id: 0, props: {foo: 'bar'}},
       { id: 1, props: {baz: 'quix'}}
     ]);
-    const collection$ = Collection.gather(itemState$, Widget, {}, {});
+    const collection$ = Collection.gather(Widget, {}, itemState$);
 
     const expected = [
       [],
@@ -26,31 +26,31 @@ describe('Collection.gather', (done) => {
     ];
 
     collection$.take(expected.length).addListener({
-      next (collection) {
+      next (items) {
         const expectedItems = expected.shift();
-        const items = collection.asArray();
         assert.equal(items.length, expectedItems.length);
         
-        items.forEach((item, i) => {
-          const expectedItem = expectedItems[i];
+        items.forEach(item => {
+          const expectedItem = expectedItems.shift();
           item.state$.take(expectedItem.length).addListener({
             next (val) {
               assert.deepEqual(val, expectedItem.shift());
             },
             error (err) {done(err)},
-            complete () {}
+            complete () {
+              assert.equal(expectedItem.length, 0);
+            }
           });
         });
       },
       error (err) {done(err)},
       complete () {
+        assert.equal(expected.length, 0);
         done();
       }
     });
   });
-});
-
-describe('Collection.gather', (done) => {
+  
   it('tracks item\'s state by id', (done) => {
     const itemState$ = xs.of([
       { id: 0, props: {foo: 'bar'}}
@@ -58,7 +58,7 @@ describe('Collection.gather', (done) => {
     [
       { id: 0, props: {baz: 'quix'}}
     ]);
-    const collection$ = Collection.gather(itemState$, Widget, {}, {});
+    const collection$ = Collection.gather(Widget, {}, itemState$);
 
     const expected = [
       [],
@@ -68,31 +68,31 @@ describe('Collection.gather', (done) => {
     ];
 
     collection$.take(expected.length).addListener({
-      next (collection) {
+      next (items) {
         const expectedItems = expected.shift();
-        const items = collection.asArray();
         assert.equal(items.length, expectedItems.length);
 
-        items.forEach((item, i) => {
-          const expectedItem = expectedItems[i];
+        items.forEach(item => {
+          const expectedItem = expectedItems.shift();
           item.state$.take(expectedItem.length).addListener({
             next (val) {
               assert.deepEqual(val, expectedItem.shift());
             },
             error (err) {done(err)},
-            complete () {}
+            complete () {
+              assert.equal(expectedItem.length, 0);
+            }
           });
         });
       },
       error (err) {done(err)},
       complete () {
+        assert.equal(expected.length, 0);
         done();
       }
     });
   });
-});
-
-describe('Collection.gather', (done) => {
+  
   it('adds new appearing items', (done) => {
     const itemState$ = xs.of([
       { id: 0, props: {foo: 'bar'}}
@@ -101,7 +101,7 @@ describe('Collection.gather', (done) => {
       { id: 0, props: {foo: 'bar'}},
       { id: 1, props: {baz: 'quix'}}
     ]);
-    const collection$ = Collection.gather(itemState$, Widget, {}, {});
+    const collection$ = Collection.gather(Widget, {}, itemState$);
 
     const expected = [
       [],
@@ -115,42 +115,40 @@ describe('Collection.gather', (done) => {
     ];
 
     collection$.take(expected.length).addListener({
-      next (collection) {
+      next (items) {
         const expectedItems = expected.shift();
-        const items = collection.asArray();
         assert.equal(items.length, expectedItems.length);
 
-        items.forEach((item, i) => {
-          const expectedItem = expectedItems[i];
+        items.forEach(item => {
+          const expectedItem = expectedItems.shift();
           item.state$.take(expectedItem.length).addListener({
             next (val) {
               assert.deepEqual(val, expectedItem.shift());
             },
             error (err) {done(err)},
-            complete () {}
+            complete () {
+              assert.equal(expectedItem.length, 0);
+            }
           });
         });
       },
       error (err) {done(err)},
       complete () {
+        assert.equal(expected.length, 0);
         done();
       }
     });
   });
-});
-
-describe('Collection.gather', (done) => {
+  
   it('removes the items that are no more present', (done) => {
     const itemState$ = xs.of([
-        { id: 0, props: {foo: 'bar'}},
-        { id: 1, props: {baz: 'quix'}}
-      ],
-      [
-        { id: 0, props: {foo: 'bar'}}
-      ])
-      // items should be added asynchronously for collection.reducers to work properly
-      .compose(delay());
-    const collection$ = Collection.gather(itemState$, Widget, {}, {});
+      { id: 0, props: {foo: 'bar'}},
+      { id: 1, props: {baz: 'quix'}}
+    ],
+    [
+      { id: 0, props: {foo: 'bar'}}
+    ]);
+    const collection$ = Collection.gather(Widget, {}, itemState$);
 
     const expected = [
       [],
@@ -164,24 +162,26 @@ describe('Collection.gather', (done) => {
     ];
 
     collection$.take(expected.length).addListener({
-      next (collection) {
+      next (items) {
         const expectedItems = expected.shift();
-        const items = collection.asArray();
         assert.equal(items.length, expectedItems.length);
 
-        items.forEach((item, i) => {
-          const expectedItem = expectedItems[i];
+        items.forEach(item => {
+          const expectedItem = expectedItems.shift();
           item.state$.take(expectedItem.length).addListener({
             next (val) {
               assert.deepEqual(val, expectedItem.shift());
             },
             error (err) {done(err)},
-            complete () {}
+            complete () {
+              assert.equal(expectedItem.length, 0);
+            }
           });
         });
       },
       error (err) {done(err)},
       complete () {
+        assert.equal(expected.length, 0);
         done();
       }
     });

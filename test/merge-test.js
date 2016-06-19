@@ -5,29 +5,27 @@ import Collection from '../src/collection';
 
 function Widget ({props$}) {
   return {
-    state$: props$
+    action$: props$
   };
 }
 
-describe('Collection.pluck', () => {
+describe('Collection.merge', () => {
   it('handles adding items', (done) => {
-    const props$ = xs.create().startWith({foo: 'bar'});
+    const props$ = xs.of({foo: 'bar'});
 
     const collection$ = Collection(Widget, {}, xs.of(
       {props$},
       {props$: xs.of({baz: 'quix'})}
     ));
 
-    const states$ = Collection.pluck(collection$, 'state$');
+    const actions$ = Collection.merge(collection$, 'action$');
 
     const expected = [
-      [],
-      [],
-      [{foo: 'bar'}],
-      [{foo: 'bar'}, {baz: 'quix'}]
+      {foo: 'bar'},
+      {baz: 'quix'}
     ];
 
-    states$.take(expected.length).addListener({
+    actions$.take(expected.length).addListener({
       next (val) {
         assert.deepEqual(val, expected.shift());
       },

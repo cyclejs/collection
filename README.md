@@ -30,131 +30,59 @@ function TodoListItem (sources) {
 }
 ```
 
-You can make a collection by calling `Collection()` and passing it a component.
+You can make a collection stream by calling `Collection()` and passing it a component.
 
 ```js
-const todoListItems = Collection(TodoListItem);
+const todoListItems$ = Collection(TodoListItem);
 ```
 
 It's common in Cycle that you want to pass your `sources` to your children. You can pass a `sources` object as the second argument. Each item in the collection will be passed these sources.
 
 ```js
-const todoListItems = Collection(TodoListItem, sources);
+const todoListItems$ = Collection(TodoListItem, sources);
 ```
 
-A `collection` has a couple of helpful methods:
+To actually populate the collection, you pass an `add$` stream. Its emitted values may be sources objects, which will be merged with the sources object you passed when you created the `collection$`. This is useful for passing `props$`.
 
-  `collection.add(sources = {}): collection`
+```js
+const todoListItems$ = Collection(TodoListItem, sources, xs.of(additionalSources));
+```
 
-Returns a new collection, with a new item added. You can pass a sources object, which will be merged with the sources object you passed when you created the `collection`. This is useful for passing `props$`.
+`add$` can emit an array, if multiple items should be added at once.
 
-  `collection.remove(item): collection`
+```js
+const todoListItems$ = Collection(TodoListItem, sources, xs.of([firstSources, secondSources]));
+```
 
-Returns a new collection with the item removed.
-
-  `collection.asArray(): array`
-
-Returns an array of the items in the `collection`. This array is cloned from the internal one, so changes will not impact the state of the `collection`.
+`Collection()` returns a stream with arrays of items as values. Those arrays are cloned from internal ones, so changes will not impact the state of the `collection$`.
 
 Collections are **immutable**. This is because in Cycle.js values that change are represented as streams.
 
-So how do you build collections that change over time?
+If we put it all together in our `TodoList` it looks like this:
+
+```js
+function TodoList (sources) {
+  const addTodo$ = sources.DOM
+    .select('.add-todo')
+    .events('click')
+    .mapTo(null); // to prevent adding click events as sources
+
+  const todoListItems$ = Collection(TodoListItem, sources, addTodo$);
+
+  const sinks = {
+    DOM: xs.of(
+      div('.todo-list', [
+        button('.add-todo', 'Add todo')
+      ])
+    )
+  }
+
+  return sinks;
+}
+```
+
+Wait, how do we get the `todoListItems` to show up in the `DOM`?
 ---
-
-The way that you build state over time in Cycle.js is to use `fold` (aka `scan` in Rx).
-
-There is a particularly helpful pattern where you update a state object over time by `fold`ing over a stream of `reducers`.
-
-So what is a `reducer`?
-
-A `reducer` is a function that takes in `state` and returns an updated `state`.
-
-Say we have a `TodoList` function, and we want to be able to add new `TodoListItem`s.
-
-```js
-function TodoList (sources) {
-  const todoListItems = Collection(TodoListItem, sources);
-
-  const sinks = {
-    DOM: xs.of(
-      div('.todo-list', [
-        button('.add-todo', 'Add todo')
-      ])
-    )
-  }
-
-  return sinks;
-}
-```
-
-We want to add a new TodoListItem to the collection when we click the 'Add todo' button.
-
-To do this we need to get a stream of reducers to update the collection.
-
-First we declare our reducer.
-
-```js
-function addItemReducer(todoListItems) {
-  return todoListItems.add();
-}
-```
-
-This will return a new copy of todoListItems with a new item added.
-
-Now we can take a stream of click events on the 'Add todo' button.
-
-```js
-const addTodoClick$ = sources.DOM.select('.add-todo').events('click');
-```
-
-We then map over our `addTodoClick` stream to make our `reducer` stream.
-
-```js
-const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
-```
-
-We can then build our collection stream by folding over our `reducer` stream.
-
-```js
-const todoListItems$ = addTodoReducer$
-  .fold((items, reducer) => reducer(items), todoListItems);
-```
-
-There are a few things going in this line.
- * We're folding over `addTodoReducer$`, which is a stream of functions that take `todoListItems` and return updated `todoListItems`
- * We're calling each `reducer` and passing the current `items` into it. Each `reducer` returns an updated `items`.
- * We're passing `todoListItems` as the initial value to `fold`, which is the empty collection we made above in our `TodoList` function.
-
- If we put it all together in our `TodoList` it looks like this:
-
-```js
-function addItemReducer(todoListItems) {
-  return todoListItems.add();
-}
-
-function TodoList (sources) {
-  const todoListItems = Collection(TodoListItem, sources);
-
-  const addTodoClick$ = sources.DOM.select('.add-todo').events('click');
-
-  const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
-
-  const todoListItems$ = addTodoReducer$
-    .fold((items, reducer) => reducer(items), todoListItems);
-
-  const sinks = {
-    DOM: xs.of(
-      div('.todo-list', [
-        button('.add-todo', 'Add todo')
-      ])
-    )
-  }
-
-  return sinks;
-}
-```
-
-But wait, how do we get the `todoListItems` to show up in the `DOM`?
 
 `Collection.pluck` to the rescue!
 
@@ -167,33 +95,13 @@ const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
 We can now map over `todoListItemVtrees$` to display our todoListItems.
 
 ```js
-const sinks = {
-  DOM: todoListItemVtrees$.map(vtrees =>
-    div('.todo-list', [
-      button('.add-todo', 'Add todo'),
-
-      div('.items', vtrees)
-    ])
-  )
-}
-```
-
-Here's that all together:
-
-```js
-function addItemReducer(todoListItems) {
-  return todoListItems.add();
-}
-
 function TodoList (sources) {
-  const todoListItems = Collection(TodoListItem, sources);
+  const addTodo$ = sources.DOM
+    .select('.add-todo')
+    .events('click')
+    .mapTo(null); // to prevent adding click events as sources
 
-  const addTodoClick$ = sources.DOM.select('.add-todo').events('click');
-
-  const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
-
-  const todoListItems$ = addTodoReducer$
-    .fold((items, reducer) => reducer(items), todoListItems);
+  const todoListItems$ = Collection(TodoListItem, sources, addTodo$);
 
   const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
 
@@ -224,59 +132,22 @@ All that a `TodoListItem` can do is return a `remove$` stream as part of it's `s
 
 Normally, to solve this problem you would need to create a circular reference between the sinks of the items in your collections and the stream of `reducers` you're `fold`ing over. This is achieved using `imitate` in `xs` or `Subject` in `rx`. This can be tricky code to write and read, and often adds quite a bit of boilerplate to your component.
 
-When you create a `Collection` you can optionally pass a `sinkHandlers` object to map `sink` events on collection items to reducers in a stream.
+When you create a `Collection` you can optionally pass a `removeSinkName` string to specify that corresponding sink will trigger item's removal.
 
 ```js
-const todoListItems = Collection(TodoListItem, sources, {
-  remove$: function (todoListItems, item, event) {
-    return todoListItems.remove(item);
-  }
-});
-```
-
-Each of the functions provided in this object should match the name of a sink on the child components. Events coming out of the child sinks are then mapped using the provided function, and a reducer is returned.
-
-The reducers from these sink events are available as `collection.reducers`. They take in `state` and return `state`.
-
-In order to actually remove our `TodoListItem`s we need to merge our `reducers` into the stream of `reducers` we're `fold`ing over.
-
-```js
-const reducer$ = xs.merge(
-  addTodoReducer$,
-
-  todoListItems.reducers
-);
-
-const todoListItems$ = reducer$
-  .fold((items, reducer) => reducer(items), todoListItems);
+const todoListItems = Collection(TodoListItem, sources, add$, 'remove$'); // 'remove$' is the default value, so it might be omitted as well
 ```
 
 All together now!
 
 ```js
-function addItemReducer(todoListItems) {
-  return todoListItems.add();
-}
-
 function TodoList (sources) {
-  const todoListItems = Collection(TodoListItem, sources, {
-    remove$: function (todoListItems, item, event) {
-      return todoListItems.remove(item);
-    }
-  });
+  const addTodo$ = sources.DOM
+    .select('.add-todo')
+    .events('click')
+    .mapTo(null); // to prevent adding click events as sources
 
-  const addTodoClick$ = sources.DOM.select('.add-todo').events('click');
-
-  const addTodoReducer$ = addTodoClick$.mapTo(addItemReducer);
-
-  const reducer$ = xs.merge( // NEW
-    addTodoReducer$,
-
-    todoListItems.reducers
-  );
-
-  const todoListItems$ = reducers$ // CHANGED
-    .fold((items, reducer) => reducer(items), todoListItems);
+  const todoListItems$ = Collection(TodoListItem, sources, addTodo$, 'remove$');
 
   const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
 
@@ -292,4 +163,29 @@ function TodoList (sources) {
 
   return sinks;
 }
+```
+
+And how do we process fetched data?
+---
+
+It's a quite common use case when a collection is built from fetched data. Usually it comes in a form of items' state snapshot. `Collection.gather` takes a stream of those snapshots and turns into a stream of collections. Its signature is similar to `Collection`, but it takes `itemState$` instead of `add$`, plus it has an optional `idAttribute` argument, which defaults to `'id'`.
+
+```js
+const tasks$ = Collection.gather(Task, sources, fetchedTasks$, 'remove$', 'uid')
+```
+
+It uses a set of rules:
+
+- items are keyed by `idAttribute`.
+- items that weren't present in the previous snapshot are added to collection.
+- each added item tracks it's own state, turning the sequence of each field's values into a source.
+- item is removed from collection if it's no more present in a snapshot.
+
+So what if our components issue HTTP requests?
+---
+
+There are kinds of sinks that rather represent actions than states. HTTP sink is a good example. If we want to get a stream of all HTTP requests issued by collection's items, `Collection.merge` will provide us one. It works basically the same as `Collection.pluck`, but merges the sinks instead of combining them into array.
+
+```js
+const tasksRequest$ = Collection.merge(tasks$, 'HTTP');
 ```

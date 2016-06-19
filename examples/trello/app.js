@@ -73,12 +73,6 @@ function Card ({DOM}) {
   };
 }
 
-const listReducers = {
-  addCard (cards) {
-    return cards.add();
-  }
-};
-
 function listView (cardsVtrees) {
   return (
     div('.list', [
@@ -92,12 +86,6 @@ function listView (cardsVtrees) {
 }
 
 function List ({DOM, props$}) {
-  const cards = Collection(Card, {DOM}, {
-    remove$ (cards, removedCard) {
-      return cards.remove(removedCard);
-    }
-  });
-
   const remove$ = DOM
     .select('.remove')
     .events('click');
@@ -105,15 +93,9 @@ function List ({DOM, props$}) {
   const addCard$ = DOM
     .select('.add-card')
     .events('click')
-    .mapTo(listReducers.addCard);
+    .mapTo(null);
 
-  const reducer$ = xs.merge(
-    cards.reducers,
-
-    addCard$
-  );
-
-  const cards$ = reducer$.fold((state, reducer) => reducer(state), cards);
+  const cards$ = Collection(Card, {DOM}, addCard$);
 
   const cardsVtrees$ = Collection.pluck(cards$, 'DOM');
 
@@ -123,12 +105,6 @@ function List ({DOM, props$}) {
     remove$
   };
 }
-
-const reducers = {
-  addList (lists) {
-    return lists.add();
-  }
-};
 
 function view (listVtrees) {
   return (
@@ -141,24 +117,12 @@ function view (listVtrees) {
 }
 
 export default function main ({DOM}) {
-  const lists = Collection(List, {DOM}, {
-    remove$ (lists, removedList) {
-      return lists.remove(removedList);
-    }
-  });
-
   const addList$ = DOM
     .select('.add-list')
     .events('click')
-    .mapTo(reducers.addList);
+    .mapTo(null);
 
-  const reducer$ = xs.merge(
-    lists.reducers,
-
-    addList$
-  );
-
-  const lists$ = reducer$.fold((state, reducer) => reducer(state), lists);
+  const lists$ = Collection(List, {DOM}, addList$);
 
   const listVtrees$ = Collection.pluck(lists$, 'DOM');
 

@@ -1,12 +1,10 @@
 import {run} from '@cycle/xstream-run';
 import {makeDOMDriver} from '@cycle/dom';
-import {restart, restartable} from 'cycle-restart';
-import isolate from '@cycle/isolate';
 
-var app = require('./app').default;
+import app from './app';
 
 const drivers = {
-  DOM: makeDOMDriver('.app'),
+  DOM: makeDOMDriver('.app')
 };
 
-const {sinks, sources} = run(app, drivers);
+run(app, drivers);

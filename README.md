@@ -87,10 +87,10 @@ Wait, how do we get the `todoListItems` to show up in the `DOM`?
 `Collection.pluck` to the rescue!
 
 ```js
-const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
+const todoListItemVtrees$ = Collection.pluck(todoListItems$, item => item.DOM);
 ```
 
-`Collection.pluck` takes a collection stream and a sink property and returns a stream of arrays of the latest value for each item. So for the `DOM` property each item in the stream is an array of vtrees. It handles the map/combine/flatten for you and also ensures that any `DOM` streams have unique keys on their vtree. This improves performance quite a bit and helps snabbdom tell the difference between each item.
+`Collection.pluck` takes a collection stream and a selector function and returns a stream of arrays of the latest value for each item. Selector function takes the sinks object and returns a stream. So for the `DOM` property each item in the stream is an array of vtrees. It handles the map/combine/flatten for you and also ensures that any vtree streams have unique keys on their values. This improves performance quite a bit and helps snabbdom tell the difference between each item.
 
 We can now map over `todoListItemVtrees$` to display our todoListItems.
 
@@ -103,7 +103,7 @@ function TodoList (sources) {
 
   const todoListItems$ = Collection(TodoListItem, sources, addTodo$);
 
-  const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
+  const todoListItemVtrees$ = Collection.pluck(todoListItems$, item => item.DOM);
 
   const sinks = {
     DOM: todoListItemVtrees$.map(vtrees =>
@@ -132,10 +132,10 @@ All that a `TodoListItem` can do is return a `remove$` stream as part of it's `s
 
 Normally, to solve this problem you would need to create a circular reference between the sinks of the items in your collections and the stream of `reducers` you're `fold`ing over. This is achieved using `imitate` in `xs` or `Subject` in `rx`. This can be tricky code to write and read, and often adds quite a bit of boilerplate to your component.
 
-When you create a `Collection` you can optionally pass a `removeSinkName` string to specify that corresponding sink will trigger item's removal.
+When you create a `Collection` you can optionally pass a `removeSelector` function that returns a stream which will trigger item's removal.
 
 ```js
-const todoListItems = Collection(TodoListItem, sources, add$, 'remove$'); // 'remove$' is the default value, so it might be omitted as well
+const todoListItems = Collection(TodoListItem, sources, add$, item => item.remove$);
 ```
 
 All together now!
@@ -147,9 +147,9 @@ function TodoList (sources) {
     .events('click')
     .mapTo(null); // to prevent adding click events as sources
 
-  const todoListItems$ = Collection(TodoListItem, sources, addTodo$, 'remove$');
+  const todoListItems$ = Collection(TodoListItem, sources, addTodo$, item => item.remove$);
 
-  const todoListItemVtrees$ = Collection.pluck(todoListItems$, 'DOM');
+  const todoListItemVtrees$ = Collection.pluck(todoListItems$, item => item.DOM);
 
   const sinks = {
     DOM: todoListItemVtrees$.map(vtrees =>
@@ -168,10 +168,10 @@ function TodoList (sources) {
 And how do we process fetched data?
 ---
 
-It's a quite common use case when a collection is built from fetched data. Usually it comes in a form of items' state snapshot. `Collection.gather` takes a stream of those snapshots and turns into a stream of collections. Its signature is similar to `Collection`, but it takes `itemState$` instead of `add$`, plus it has an optional `idAttribute` argument, which defaults to `'id'`.
+It's a quite common use case when a collection is built from fetched data. Usually it comes in a form of items' state snapshot. `Collection.gather` takes a stream of those snapshots and turns into a stream of collections. It takes `Collection` and `sources` arguments, just as `Collection` does, plus `itemState$` and an optional `idAttribute` argument, which defaults to `'id'`.
 
 ```js
-const tasks$ = Collection.gather(Task, sources, fetchedTasks$, 'remove$', 'uid')
+const tasks$ = Collection.gather(Task, sources, fetchedTasks$, 'uid')
 ```
 
 It uses a set of rules:
@@ -187,5 +187,5 @@ So what if our components issue HTTP requests?
 There are kinds of sinks that rather represent actions than states. HTTP sink is a good example. If we want to get a stream of all HTTP requests issued by collection's items, `Collection.merge` will provide us one. It works basically the same as `Collection.pluck`, but merges the sinks instead of combining them into array.
 
 ```js
-const tasksRequest$ = Collection.merge(tasks$, 'HTTP');
+const tasksRequest$ = Collection.merge(tasks$, item => item.HTTP);
 ```

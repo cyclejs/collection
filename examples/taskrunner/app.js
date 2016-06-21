@@ -113,9 +113,9 @@ export default function TaskRunner ({DOM, HTTP}) {
     type: 'application/json'
   });
 
-  const tasksVtrees$ = Collection.pluck(tasks$, 'DOM');
-  const tasksComplete$ = Collection.pluck(tasks$, 'complete$');
-  const tasksRequest$ = Collection.merge(tasks$, 'HTTP');
+  const tasksVtrees$ = Collection.pluck(tasks$, item => item.DOM);
+  const tasksComplete$ = Collection.pluck(tasks$, item => item.complete$);
+  const tasksRequest$ = Collection.merge(tasks$, item => item.HTTP);
 
   return {
     DOM: xs.combine(tasksVtrees$, tasksComplete$).map(view),

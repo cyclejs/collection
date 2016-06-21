@@ -18,7 +18,7 @@ describe('Collection.pluck', () => {
       {props$: xs.of({baz: 'quix'})}
     ));
 
-    const states$ = Collection.pluck(collection$, 'state$');
+    const states$ = Collection.pluck(collection$, item => item.state$);
 
     const expected = [
       [],

@@ -98,7 +98,7 @@ describe('Collection', () => {
     });
   });
 
-  it('takes a name of sink responsible for removal', (done) => {
+  it('takes a function returning sink responsible for removal', (done) => {
     function Destroyable ({props$}) {
       return {
         destroy$: props$
@@ -107,10 +107,9 @@ describe('Collection', () => {
 
     const props$ = xs.periodic(100).take(1);
 
-    const collection$ = Collection(Destroyable, {}, xs.of({props$}), 'destroy$');
+    const collection$ = Collection(Destroyable, {}, xs.of({props$}), item => item.destroy$);
 
     const expected = [0, 1, 0];
-    const completed = false;
 
     collection$.take(expected.length).addListener({
       next (items) {
@@ -123,4 +122,37 @@ describe('Collection', () => {
       }
     });
   });
+
+  it('doesn\'t explode in case of repetative removal', (done) => {
+    function Destroyable ({props$}) {
+      return {
+        destroy$: props$
+      };
+    }
+
+    const props$ = xs.periodic(100);
+
+    const collection$ = Collection(Destroyable, {}, xs.of({props$}), item => item.destroy$);
+
+    const expected = [0, 1, 0];
+    let completed = false;
+
+    collection$.take(expected.length).addListener({
+      next (items) {
+        assert.equal(items.length, expected.shift());
+      },
+      error (err) {done(err)},
+      complete () {
+        completed = true;
+      }
+    });
+
+    setTimeout(() => {
+      assert.equal(expected.length, 0);
+      assert.equal(completed, true);
+      done();
+    }, 500);
+  });
 });
+
+

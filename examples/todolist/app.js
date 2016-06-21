@@ -89,7 +89,7 @@ export default function TodoList ({DOM}) {
 
   const todos$ = Collection(Todo, {DOM, removeComplete$, filter$}, addTodo$, item => item.remove$);
 
-  const todoVtrees$ = Collection.pluck(todos$, item => item.DOM).debug();
+  const todoVtrees$ = Collection.pluck(todos$, item => item.DOM);
   const todosComplete$ = Collection.pluck(todos$, item => item.complete$);
 
   return {

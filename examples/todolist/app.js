@@ -87,10 +87,10 @@ export default function TodoList ({DOM}) {
     .map(text => addTodoClick$.mapTo({text}))
     .flatten();
 
-  const todos$ = Collection(Todo, {DOM, removeComplete$, filter$}, addTodo$);
+  const todos$ = Collection(Todo, {DOM, removeComplete$, filter$}, addTodo$, item => item.remove$);
 
-  const todoVtrees$ = Collection.pluck(todos$, 'DOM');
-  const todosComplete$ = Collection.pluck(todos$, 'complete$');
+  const todoVtrees$ = Collection.pluck(todos$, item => item.DOM).debug();
+  const todosComplete$ = Collection.pluck(todos$, item => item.complete$);
 
   return {
     DOM: xs.combine(todoVtrees$, todosComplete$).map(view)

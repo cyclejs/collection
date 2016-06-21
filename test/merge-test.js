@@ -18,7 +18,7 @@ describe('Collection.merge', () => {
       {props$: xs.of({baz: 'quix'})}
     ));
 
-    const actions$ = Collection.merge(collection$, 'action$');
+    const actions$ = Collection.merge(collection$, item => item.action$);
 
     const expected = [
       {foo: 'bar'},
@@ -29,7 +29,9 @@ describe('Collection.merge', () => {
       next (val) {
         assert.deepEqual(val, expected.shift());
       },
-      error (err) {done(err)},
+      error (err) {
+        done(err)
+      },
       complete () {
         assert.equal(expected.length, 0);
         done();

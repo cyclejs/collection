@@ -3,6 +3,12 @@ import delay from 'xstream/extra/delay';
 import dropRepeats from 'xstream/extra/dropRepeats';
 import isolate from '@cycle/isolate';
 
+const noop = Function.prototype;
+
+function isVtree (x) {
+  return x && typeof x.sel === 'string';
+}
+
 let _id = 0;
 
 function id () {
@@ -21,12 +27,12 @@ function makeItem (component, sources) {
 }
 
 function collection (options, items = []) {
-  const { component, sources, removeSinkName } = options;
+  const { component, sources, removeSelector } = options;
 
   return {
     add (additionalSources = {}) {
       const newItem = makeItem(component, {...sources, ...additionalSources});
-      const removeSink = newItem[removeSinkName] || xs.empty();
+      const removeSink = removeSelector(newItem) || xs.empty();
       newItem._remove$ = removeSink.take(1).mapTo(newItem);
 
       return collection(
@@ -48,7 +54,7 @@ function collection (options, items = []) {
   };
 }
 
-function Collection (component, sources = {}, add$ = xs.empty(), removeSinkName = 'remove$') {
+function Collection (component, sources = {}, add$ = xs.empty(), removeSelector = noop) {
   const removeProxy$ = xs.create();
   const addReducer$ = add$.map(sourcesList => collection => {
     if (Array.isArray(sourcesList)) {
@@ -62,27 +68,27 @@ function Collection (component, sources = {}, add$ = xs.empty(), removeSinkName 
   const removeReducer$ = removeProxy$.map(item => collection => collection.remove(item));
   const reducer$ = xs.merge(addReducer$, removeReducer$);
 
-  const emptyCollection = collection({ component, sources, removeSinkName });
+  const emptyCollection = collection({ component, sources, removeSelector });
   const collection$ = reducer$
     .fold((collection, reducer) => reducer(collection), emptyCollection)
     .map(collection => collection.asArray());
 
-  const remove$ = Collection.merge(collection$, '_remove$');
+  const remove$ = Collection.merge(collection$, item => item._remove$);
   removeProxy$.imitate(remove$);
 
   return collection$;
 }
 
-Collection.pluck = function pluck (collection$, sinkProperty) {
+Collection.pluck = function pluck (collection$, pluckSelector) {
   const sinks = {};
 
   function sink$ (item) {
-    const key = `${item._name}.${item._id}.${sinkProperty}`;
+    const key = item._id;
 
     if (sinks[key] === undefined) {
-      const sink = sinkProperty === 'DOM'
-        ? item[sinkProperty].map(vtree => ({...vtree, key}))
-        : item[sinkProperty];
+      const sink = pluckSelector(item).map(x =>
+        isVtree(x) && !x.key ? {...x, key} : x
+      );
       sinks[key] = sink.remember();
     }
 
@@ -96,16 +102,16 @@ Collection.pluck = function pluck (collection$, sinkProperty) {
     .startWith([]);
 };
 
-Collection.merge = function merge (collection$, sinkProperty) {
+Collection.merge = function merge (collection$, mergeSelector) {
   const sinks = {};
 
   function sink$ (item) {
-    const key = `${item._name}.${item._id}.${sinkProperty}`;
+    const key = item._id;
 
     if (sinks[key] === undefined) {
-      const sink = sinkProperty === 'DOM'
-        ? item[sinkProperty].map(vtree => ({...vtree, key}))
-        : item[sinkProperty];
+      const sink = mergeSelector(item).map(x =>
+        isVtree(x) ? {key, ...x} : x
+      );
       // prevent sink from early completion and reinitialization
       sinks[key] = xs.merge(sink, xs.never());
     }
@@ -120,13 +126,12 @@ Collection.merge = function merge (collection$, sinkProperty) {
 };
 
 // convert a stream of items' sources snapshots into a stream of collections
-Collection.gather = function gather (component, sources, items$, removeSinkName = 'remove$', idAttribute = 'id') {
+Collection.gather = function gather (component, sources, items$, idAttribute = 'id') {
   function makeDestroyable (component) {
     return (sources) => {
-      const sinks = component(sources);
       return {
-        ...sinks,
-        [removeSinkName]: xs.merge(sinks[removeSinkName] || xs.empty(), sources._destroy$)
+        ...component(sources),
+        _destroy$: sources._destroy$
       };
     };
   }
@@ -192,7 +197,7 @@ Collection.gather = function gather (component, sources, items$, removeSinkName 
     .filter(addedItems => addedItems.length)
     .map(addedItems => addedItems.map(item => itemToSourceStreams(item, itemsState$)));
 
-  return Collection(makeDestroyable(component), sources, add$, removeSinkName);
+  return Collection(makeDestroyable(component), sources, add$, item => item._destroy$);
 };
 
 export default Collection;

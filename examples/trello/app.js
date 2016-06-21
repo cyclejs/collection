@@ -95,9 +95,9 @@ function List ({DOM, props$}) {
     .events('click')
     .mapTo(null);
 
-  const cards$ = Collection(Card, {DOM}, addCard$);
+  const cards$ = Collection(Card, {DOM}, addCard$, item => item.remove$);
 
-  const cardsVtrees$ = Collection.pluck(cards$, 'DOM');
+  const cardsVtrees$ = Collection.pluck(cards$, item => item.DOM);
 
   return {
     DOM: cardsVtrees$.map(listView),
@@ -122,9 +122,9 @@ export default function main ({DOM}) {
     .events('click')
     .mapTo(null);
 
-  const lists$ = Collection(List, {DOM}, addList$);
+  const lists$ = Collection(List, {DOM}, addList$, item => item.remove$);
 
-  const listVtrees$ = Collection.pluck(lists$, 'DOM');
+  const listVtrees$ = Collection.pluck(lists$, item => item.DOM);
 
   return {
     DOM: listVtrees$.map(view)

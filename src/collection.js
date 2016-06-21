@@ -87,7 +87,7 @@ Collection.pluck = function pluck (collection$, pluckSelector) {
 
     if (sinks[key] === undefined) {
       const sink = pluckSelector(item).map(x =>
-        isVtree(x) && !x.key ? {...x, key} : x
+        isVtree(x) && x.key == null ? {...x, key} : x
       );
       sinks[key] = sink.remember();
     }
@@ -110,7 +110,7 @@ Collection.merge = function merge (collection$, mergeSelector) {
 
     if (sinks[key] === undefined) {
       const sink = mergeSelector(item).map(x =>
-        isVtree(x) ? {key, ...x} : x
+        isVtree(x) && x.key == null ? {...x, key} : x
       );
       // prevent sink from early completion and reinitialization
       sinks[key] = xs.merge(sink, xs.never());
@@ -128,12 +128,10 @@ Collection.merge = function merge (collection$, mergeSelector) {
 // convert a stream of items' sources snapshots into a stream of collections
 Collection.gather = function gather (component, sources, items$, idAttribute = 'id') {
   function makeDestroyable (component) {
-    return (sources) => {
-      return {
-        ...component(sources),
-        _destroy$: sources._destroy$
-      };
-    };
+    return (sources) => ({
+      ...component(sources),
+      _destroy$: sources._destroy$
+    });
   }
 
   // finds items not present in previous snapshot

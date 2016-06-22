@@ -12,8 +12,8 @@ function todoView (complete, text) {
   );
 }
 
-function Todo ({DOM, text, removeComplete$, filter$}) {
-  const removeClick$ = DOM
+function Todo ({DOM, text}) {
+  const remove$ = DOM
     .select('.remove')
     .events('click');
 
@@ -23,22 +23,10 @@ function Todo ({DOM, text, removeComplete$, filter$}) {
     .map(event => event.target.checked)
     .startWith(false);
 
-  const removeIfComplete$ = complete$
-    .map(complete => removeComplete$.filter(() => complete))
-    .flatten();
-
-  function viewUnlessFiltered ([complete, filter]) {
-    if (filter(complete)) {
-      return todoView(complete, text);
-    } else {
-      return div('.todo', {style: {display: 'none'}});
-    }
-  }
-
   return {
-    DOM: xs.combine(complete$, filter$).map(viewUnlessFiltered),
+    DOM: complete$.map(complete => todoView(complete, text)),
 
-    remove$: xs.merge(removeClick$, removeIfComplete$),
+    remove$,
 
     complete$
   };
@@ -62,16 +50,24 @@ function view ([todoVtrees, todosComplete]) {
   );
 }
 
+function showViewUnlessFiltered ([vtree, complete, filter]) {
+  if (filter(complete)) {
+    return vtree;
+  }
+
+  return div('.todo', {style: {display: 'none'}});
+}
+
+function removeItemIfComplete$ (removeComplete$, itemComplete$) {
+  return removeComplete$
+    .mapTo(itemComplete$.filter(complete => complete))
+    .flatten();
+}
+
 export default function TodoList ({DOM}) {
   const removeComplete$ = DOM
     .select('.remove-complete')
     .events('click');
-
-  const filter$ = xs.merge(
-    DOM.select('.show-all').events('click').mapTo((completed) => true),
-    DOM.select('.show-completed').events('click').mapTo((completed) => completed),
-    DOM.select('.show-active').events('click').mapTo((completed) => !completed)
-  ).startWith((completed) => true);
 
   const addTodoClick$ = DOM
     .select('.add-todo')
@@ -87,9 +83,29 @@ export default function TodoList ({DOM}) {
     .map(text => addTodoClick$.mapTo({text}))
     .flatten();
 
-  const todos$ = Collection(Todo, {DOM, removeComplete$, filter$}, addTodo$, item => item.remove$);
+  const todos$ = Collection(
+    Todo,
+    {DOM},
+    addTodo$,
+    item => xs.merge(
+      item.remove$,
+      removeItemIfComplete$(removeComplete$, item.complete$)
+    )
+  );
 
-  const todoVtrees$ = Collection.pluck(todos$, item => item.DOM);
+  const filter$ = xs.merge(
+    DOM.select('.show-all').events('click').mapTo((completed) => true),
+    DOM.select('.show-completed').events('click').mapTo((completed) => completed),
+    DOM.select('.show-active').events('click').mapTo((completed) => !completed)
+  ).startWith((completed) => true);
+
+  const todoVtrees$ = Collection.pluck(
+    todos$,
+    item => xs
+      .combine(item.DOM, item.complete$, filter$)
+      .map(showViewUnlessFiltered)
+  );
+
   const todosComplete$ = Collection.pluck(todos$, item => item.complete$);
 
   return {

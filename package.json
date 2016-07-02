@@ -28,12 +28,12 @@
   },
   "dependencies": {
     "@cycle/isolate": "^1.4.0",
-    "xstream": "^5.0.6"
+    "xstream": "^5.1.0"
   },
   "devDependencies": {
-    "@cycle/dom": "10.0.0-rc34",
-    "@cycle/http": "^9.0.0-rc9",
-    "@cycle/xstream-run": "^3.0.1",
+    "@cycle/dom": "^10.0.4",
+    "@cycle/http": "^9.0.2",
+    "@cycle/xstream-run": "^3.0.3",
     "babel-cli": "^6.2.0",
     "babel-core": "^6.2.1",
     "babel-plugin-transform-object-rest-spread": "^6.8.0",

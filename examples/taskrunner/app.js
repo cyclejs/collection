@@ -11,8 +11,8 @@ function taskView ([{status, text}, editing]) {
       input('.change-text', {
         props: {value: text, hidden: !editing},
         hook: {
-          update({elm}) {
-            if(editing) {
+          update ({elm}) {
+            if (editing) {
               elm.focus();
               elm.selectionStart = text.length;
             }
@@ -107,9 +107,9 @@ function itemRequests$ (deleteComplete$, item) {
   const request$ = xs.merge(delete$, edit$);
 
   return item.HTTP.map(base => request$.map(request => ({
-      ...base,
-      ...request
-    })))
+    ...base,
+    ...request
+  })))
     .flatten();
 }
 

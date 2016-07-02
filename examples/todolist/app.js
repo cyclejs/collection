@@ -9,8 +9,8 @@ function todoView ([complete, editing, text]) {
       input('.change-text', {
         props: {value: text, hidden: !editing},
         hook: {
-          update({elm}) {
-            if(editing) {
+          update ({elm}) {
+            if (editing) {
               elm.focus();
               elm.selectionStart = text.length;
             }
@@ -42,7 +42,6 @@ function Todo ({DOM, text$}) {
       .filter(event => event.code === 'Enter'),
     changeText.events('blur')
   ).map(event => event.target.value);
-
 
   const editing$ = xs.merge(
     DOM.select('.text').events('click').mapTo(true),

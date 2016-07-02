@@ -60,3 +60,6 @@ html, body {
   height: 50px;
 }
 
+.todo .change-text{
+  font-size: 1.7rem;
+}

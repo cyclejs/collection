@@ -1,48 +1,59 @@
 import {div, span, button, input} from '@cycle/dom';
 import xs from 'xstream';
-import dropRepeats from 'xstream/extra/dropRepeats';
+import delay from 'xstream/extra/delay';
 import Collection from '../../src/collection';
 
-function taskView ({status, text, visible}) {
+function taskView ([{status, text}, editing]) {
   return (
-    div('.task', {
-      style: visible ? {} : {display: 'none'}
-    }, [
+    div('.task', [
       span('.status', status),
       ': ',
-      span('.text', text),
+      input('.change-text', {
+        props: {value: text, hidden: !editing},
+        hook: {
+          update ({elm}) {
+            if (editing) {
+              elm.focus();
+              elm.selectionStart = text.length;
+            }
+          }
+        }
+      }),
+      editing
+        ? ''
+        : span('.text', text),
       button('.delete', 'Delete')
     ])
   );
 }
 
-function Task ({DOM, props, deleteComplete$, filter$}) {
-  const deleteClick$ = DOM
+function Task ({DOM, props}) {
+  const delete$ = DOM
     .select('.delete')
     .events('click');
 
-  const deleteIfComplete$ = props
-    .map(({status}) => deleteComplete$.filter(() => status === 'complete'))
-    .flatten();
+  const changeText = DOM.select('.change-text');
+  const changeText$ = xs.merge(
+    changeText.events('keydown')
+      .filter(event => event.code === 'Enter'),
+    changeText.events('blur')
+  ).map(event => event.target.value);
 
-  const delete$ = xs.merge(deleteClick$, deleteIfComplete$);
+  const editing$ = xs.merge(
+    DOM.select('.text').events('click').mapTo(true),
+    changeText$.compose(delay()).mapTo(false)
+  ).startWith(false);
 
-  const viewUnlessFiltered  = ([props, filter]) =>
-    taskView({
-      ...props,
-      visible: filter(props.status)
-    });
+  const edit$ = editing$.map(editing => changeText$.filter(() => editing)).flatten();
 
   return {
-    DOM: xs.combine(props, filter$).map(viewUnlessFiltered),
-    complete$: props.map(({status}) => status === 'complete').compose(dropRepeats()),
-    HTTP: props
-      .map(({id}) => delete$.mapTo({
-        url: `/tasks/${id}`,
-        method: 'DELETE',
-        type: 'application/json'
-      }))
-      .flatten()
+    DOM: xs.combine(props, editing$).map(taskView),
+    complete$: props.map(({status}) => status === 'complete'),
+    delete$,
+    edit$,
+    HTTP: props.map(({id}) => ({
+      url: `/tasks/${id}`
+    }))
   };
 }
 
@@ -64,15 +75,49 @@ function view ([tasksVtrees, tasksComplete]) {
   );
 }
 
+function showViewUnlessFiltered ([vtree, complete, filter]) {
+  return filter(complete) ? vtree : '';
+}
+
+function deleteItemIfComplete$ (deleteComplete$, itemComplete$) {
+  return itemComplete$
+    .map(complete => deleteComplete$.filter(() => complete))
+    .flatten();
+}
+
+function itemRequests$ (deleteComplete$, item) {
+  const delete$ = xs.merge(
+    item.delete$,
+    deleteItemIfComplete$(deleteComplete$, item.complete$)
+  ).mapTo({
+    method: 'DELETE',
+    type: 'application/json'
+  });
+
+  const edit$ = item.edit$.map(text => ({
+    method: 'PATCH',
+    type: 'application/json',
+    send: {text}
+  }));
+
+  const request$ = xs.merge(delete$, edit$);
+
+  return item.HTTP.map(base => request$.map(request => ({
+    ...base,
+    ...request
+  })))
+    .flatten();
+}
+
 export default function TaskRunner ({DOM, HTTP}) {
   const deleteComplete$ = DOM
     .select('.delete-complete')
     .events('click');
 
   const filter$ = xs.merge(
-    DOM.select('.show-all').events('click').mapTo(() => true),
-    DOM.select('.show-complete').events('click').mapTo(status => status === 'complete'),
-    DOM.select('.show-running').events('click').mapTo(status => status !== 'complete')
+    DOM.select('.show-all').events('click').mapTo(complete => true),
+    DOM.select('.show-complete').events('click').mapTo(complete => complete),
+    DOM.select('.show-running').events('click').mapTo(complete => !complete)
   ).startWith(() => true);
 
   const tasksState$ = HTTP.response$$
@@ -86,7 +131,7 @@ export default function TaskRunner ({DOM, HTTP}) {
     )
     .startWith([]);
 
-  const tasks$ = Collection.gather(Task, {DOM, deleteComplete$, filter$}, tasksState$);
+  const tasks$ = Collection.gather(Task, {DOM}, tasksState$);
 
   const addTaskClick$ = DOM
     .select('.add-task')
@@ -113,9 +158,14 @@ export default function TaskRunner ({DOM, HTTP}) {
     type: 'application/json'
   });
 
-  const tasksVtrees$ = Collection.pluck(tasks$, item => item.DOM);
+  const tasksVtrees$ = Collection.pluck(
+    tasks$,
+    item => xs
+      .combine(item.DOM, item.complete$, filter$)
+      .map(showViewUnlessFiltered)
+  );
   const tasksComplete$ = Collection.pluck(tasks$, item => item.complete$);
-  const tasksRequest$ = Collection.merge(tasks$, item => item.HTTP);
+  const tasksRequest$ = Collection.merge(tasks$, item => itemRequests$(deleteComplete$, item));
 
   return {
     DOM: xs.combine(tasksVtrees$, tasksComplete$).map(view),

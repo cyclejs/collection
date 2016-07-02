@@ -2,17 +2,30 @@ import {div, span, button, input} from '@cycle/dom';
 import xs from 'xstream';
 import Collection from '../../src/collection';
 
-function todoView (complete, text) {
+function todoView ([complete, editing, text]) {
   return (
     div('.todo', [
       input('.complete', {attrs: {type: 'checkbox', checked: complete}}),
-      span('.text', {style: {'text-decoration': complete ? 'line-through' : 'initial'}}, text),
+      input('.change-text', {
+        props: {value: text, hidden: !editing},
+        hook: {
+          update ({elm}) {
+            if (editing) {
+              elm.focus();
+              elm.selectionStart = text.length;
+            }
+          }
+        }
+      }),
+      editing
+        ? ''
+        : span('.text', {style: {'text-decoration': complete ? 'line-through' : 'initial'}}, text),
       button('.remove', 'Remove')
     ])
   );
 }
 
-function Todo ({DOM, text}) {
+function Todo ({DOM, text$}) {
   const remove$ = DOM
     .select('.remove')
     .events('click');
@@ -23,8 +36,24 @@ function Todo ({DOM, text}) {
     .map(event => event.target.checked)
     .startWith(false);
 
+  const changeText = DOM.select('.change-text');
+  const changeText$ = xs.merge(
+    changeText.events('keydown')
+      .filter(event => event.code === 'Enter'),
+    changeText.events('blur')
+  ).map(event => event.target.value);
+
+  const editing$ = xs.merge(
+    DOM.select('.text').events('click').mapTo(true),
+    changeText$.mapTo(false)
+  ).startWith(false);
+
   return {
-    DOM: complete$.map(complete => todoView(complete, text)),
+    DOM: xs.combine(
+      complete$,
+      editing$,
+      xs.merge(text$, changeText$)
+    ).map(todoView),
 
     remove$,
 
@@ -59,8 +88,8 @@ function showViewUnlessFiltered ([vtree, complete, filter]) {
 }
 
 function removeItemIfComplete$ (removeComplete$, itemComplete$) {
-  return removeComplete$
-    .mapTo(itemComplete$.filter(complete => complete))
+  return itemComplete$
+    .map(complete => removeComplete$.filter(() => complete))
     .flatten();
 }
 
@@ -80,7 +109,7 @@ export default function TodoList ({DOM}) {
     .startWith('');
 
   const addTodo$ = newTodoText$
-    .map(text => addTodoClick$.mapTo({text}))
+    .map(text => addTodoClick$.mapTo({text$: xs.of(text)}))
     .flatten();
 
   const todos$ = Collection(

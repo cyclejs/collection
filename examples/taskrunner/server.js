@@ -53,12 +53,16 @@ app.get('/tasks', (req, res) =>
   res.send(JSON.stringify(state.tasks))
 );
 
-app.post('/tasks', ({body}, res) =>
-  res.send(JSON.stringify(state.add(body)))
+app.post('/tasks', (req, res) =>
+  res.send(JSON.stringify(state.add(req.body)))
 );
 
 app.delete('/tasks/:id', (req, res) => {
   res.send(JSON.stringify(state.remove(req.params.id)));
+});
+
+app.patch('/tasks/:id', (req, res) => {
+  res.send(JSON.stringify(state.update(req.params.id, req.body)));
 });
 
 app.listen(8000, () => console.log('listening on localhost:8000'));

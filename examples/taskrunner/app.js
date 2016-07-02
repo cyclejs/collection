@@ -30,11 +30,7 @@ function taskView ([{status, text}, editing]) {
 function Task ({DOM, props}) {
   const delete$ = DOM
     .select('.delete')
-    .events('click')
-    .mapTo({
-      method: 'DELETE',
-      type: 'application/json'
-    });
+    .events('click');
 
   const changeText = DOM.select('.change-text');
   const changeText$ = xs.merge(

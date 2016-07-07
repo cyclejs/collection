@@ -18,6 +18,16 @@ function id () {
 function makeItem (component, sources) {
   const newId = id();
 
+  for (const broadcastSourceName of Object.keys(sources.Broadcast)) {
+    const broadcastProxy$ = sources.Broadcast[broadcastSourceName];
+
+    sources.Broadcast[broadcastSourceName] = broadcastProxy$
+      .filter(({item, event}) => {
+        return item && item._id !== newId
+      })
+      .map(({item, event}) => event);
+  }
+
   const newItem = isolate(component, newId.toString())(sources);
 
   newItem._id = newId;
@@ -54,15 +64,22 @@ function collection (options, items = []) {
   };
 }
 
-function Collection (component, sources = {}, add$ = xs.empty(), removeSelector = noop) {
+function Collection (component, sources = {}, add$ = xs.empty(), removeSelector = noop, broadcastSelector = {}) {
   const removeProxy$ = xs.create();
+
+  const broadcastSources = {Broadcast: {}};
+
+  for (let broadcastSelectorName of Object.keys(broadcastSelector)) {
+    broadcastSources.Broadcast[broadcastSelectorName] = xs.create();
+  }
+
   const addReducer$ = add$.map(sourcesList => collection => {
     if (Array.isArray(sourcesList)) {
       // multiple items
-      return sourcesList.reduce((collection, sources) => collection.add(sources), collection);
+      return sourcesList.reduce((collection, sources) => collection.add({...sources, ...broadcastSources}), collection);
     } else {
       // single item
-      return collection.add(sourcesList);
+      return collection.add({...sourcesList, ...broadcastSources});
     }
   });
   const removeReducer$ = removeProxy$.map(item => collection => collection.remove(item));
@@ -75,6 +92,20 @@ function Collection (component, sources = {}, add$ = xs.empty(), removeSelector 
 
   const remove$ = Collection.merge(collection$, item => item._remove$);
   removeProxy$.imitate(remove$);
+
+  for (const broadcastSelectorName of Object.keys(broadcastSelector)) {
+    const selector = broadcastSelector[broadcastSelectorName];
+
+    const broadcast$ = Collection.merge(
+      collection$,
+      item => {
+        debugger
+        return selector(item).map(event => ({item, event}))
+      }
+    );
+
+    broadcastSources.Broadcast[broadcastSelectorName].imitate(broadcast$);
+  }
 
   return collection$;
 }

@@ -27,6 +27,12 @@ function makeItem (component, sources) {
   return newItem;
 }
 
+function convert (stream, sourceSA, targetSA) {
+  return targetSA.isValidStream(stream)
+    ? stream
+    : targetSA.adapt(stream, sourceSA.streamSubscribe);
+}
+
 function makeCollection (externalSA = xsAdapter) {
   function collection (options, items = []) {
     const { component, sources, removeSelector } = options;
@@ -34,7 +40,8 @@ function makeCollection (externalSA = xsAdapter) {
     return {
       add (additionalSources = {}) {
         const newItem = makeItem(component, {...sources, ...additionalSources});
-        const removeSink = removeSelector(newItem) || xs.empty();
+        const selectedSink = removeSelector(newItem) || xs.empty();
+        const removeSink = convert(selectedSink, externalSA, xsAdapter);
         newItem._remove$ = removeSink.take(1).mapTo(newItem);
 
         return collection(
@@ -56,8 +63,9 @@ function makeCollection (externalSA = xsAdapter) {
     };
   }
 
-  function Collection (component, sources = {}, add$ = xs.empty(), removeSelector = noop) {
+  function Collection (component, sources = {}, sourceAdd$ = xs.empty(), removeSelector = noop) {
     const removeProxy$ = xs.create();
+    const add$ = convert(sourceAdd$, externalSA, xsAdapter);
     const addReducer$ = add$.map(sourcesList => collection => {
       if (Array.isArray(sourcesList)) {
         // multiple items
@@ -78,7 +86,7 @@ function makeCollection (externalSA = xsAdapter) {
     const remove$ = Collection.merge(collection$, item => item._remove$);
     removeProxy$.imitate(remove$);
 
-    return collection$;
+    return convert(collection$, xsAdapter, externalSA);
   }
 
   Collection.pluck = function pluck (collection$, pluckSelector) {

@@ -89,14 +89,15 @@ function makeCollection (externalSA = xsAdapter) {
     return convert(collection$, xsAdapter, externalSA);
   }
 
-  Collection.pluck = function pluck (collection$, pluckSelector) {
+  Collection.pluck = function pluck (sourceCollection$, pluckSelector) {
     const sinks = {};
 
     function sink$ (item) {
       const key = item._id;
 
       if (sinks[key] === undefined) {
-        const sink = pluckSelector(item).map(x =>
+        const selectedSink = convert(pluckSelector(item), externalSA, xsAdapter);
+        const sink = selectedSink.map(x =>
           isVtree(x) && x.key == null ? {...x, key} : x
         );
         sinks[key] = sink.remember();
@@ -105,11 +106,13 @@ function makeCollection (externalSA = xsAdapter) {
       return sinks[key];
     }
 
-    return collection$
+    const collection$ = convert(sourceCollection$, externalSA, xsAdapter);
+    const outputCollection$ = collection$
       .map(items => items.map(item => sink$(item)))
       .map(sinkStreams => xs.combine(...sinkStreams))
       .flatten()
       .startWith([]);
+    return convert(outputCollection$, xsAdapter, externalSA);
   };
 
   Collection.merge = function merge (sourceCollection$, mergeSelector, internal = false) {

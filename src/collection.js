@@ -144,7 +144,7 @@ function makeCollection (externalSA = xsAdapter) {
   };
 
   // convert a stream of items' sources snapshots into a stream of collections
-  Collection.gather = function gather (component, sources, items$, idAttribute = 'id') {
+  Collection.gather = function gather (component, sources, sourceItems$, idAttribute = 'id') {
     function makeDestroyable (component) {
       return (sources) => ({
         ...component(sources),
@@ -190,20 +190,23 @@ function makeCollection (externalSA = xsAdapter) {
             return sources;
           }
 
+          const stream$ = itemState$
+            .map(state => state[key])
+            .startWith(addedItem[key])
+            // skip the snapshot if the value didn't change
+            .compose(dropRepeats(compareJSON))
+            .remember();
+
           return {
             ...sources,
-            [key]: itemState$
-              .map(state => state[key])
-              .startWith(addedItem[key])
-              // skip the snapshot if the value didn't change
-              .compose(dropRepeats(compareJSON))
-              .remember()
+            [key]: convert(stream$, xsAdapter, externalSA)
           };
         }, {
           _destroy$
         });
     }
 
+    const items$ = convert(sourceItems$, externalSA, xsAdapter);
     const itemsState$ = items$.remember();
 
     const add$ = itemsState$

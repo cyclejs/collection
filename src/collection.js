@@ -83,7 +83,7 @@ function makeCollection (externalSA = xsAdapter) {
       .fold((collection, reducer) => reducer(collection), emptyCollection)
       .map(collection => collection.asArray());
 
-    const remove$ = Collection.merge(collection$, item => item._remove$);
+    const remove$ = Collection.merge(collection$, item => item._remove$, true);
     removeProxy$.imitate(remove$);
 
     return convert(collection$, xsAdapter, externalSA);
@@ -112,14 +112,15 @@ function makeCollection (externalSA = xsAdapter) {
       .startWith([]);
   };
 
-  Collection.merge = function merge (collection$, mergeSelector) {
+  Collection.merge = function merge (sourceCollection$, mergeSelector, internal = false) {
     const sinks = {};
 
     function sink$ (item) {
       const key = item._id;
 
       if (sinks[key] === undefined) {
-        const sink = mergeSelector(item).map(x =>
+        const selectedSink = convert(mergeSelector(item), externalSA, xsAdapter);
+        const sink = selectedSink.map(x =>
           isVtree(x) && x.key == null ? {...x, key} : x
         );
         // prevent sink from early completion and reinitialization
@@ -129,10 +130,14 @@ function makeCollection (externalSA = xsAdapter) {
       return sinks[key];
     }
 
-    return collection$
+    const collection$ = convert(sourceCollection$, externalSA, xsAdapter);
+    const outputCollection$ = collection$
       .map(items => items.map(item => sink$(item)))
       .map(sinkStreams => xs.merge(...sinkStreams))
       .flatten();
+    return internal
+      ? outputCollection$
+      : convert(outputCollection$, xsAdapter, externalSA);
   };
 
   // convert a stream of items' sources snapshots into a stream of collections

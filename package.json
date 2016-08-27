@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@cycle/isolate": "^1.4.0",
+    "@cycle/xstream-adapter": "^3.0.3",
     "xstream": "^5.1.0"
   },
   "devDependencies": {

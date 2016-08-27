@@ -154,5 +154,3 @@ describe('Collection', () => {
     }, 500);
   });
 });
-
-

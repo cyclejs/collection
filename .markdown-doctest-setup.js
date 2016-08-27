@@ -1,13 +1,15 @@
-var Collection = require('.').default;
+var Collection = require('.');
 var xs = require('xstream').default;
+var rxjsAdapter = require('@cycle/rxjs-adapter').default;
 
 module.exports = {
   require: {
+    '@cycle/rxjs-adapter': rxjsAdapter,
     '@cycle/collection': Collection
   },
 
   globals: {
-    Collection: Collection,
+    Collection: Collection.default,
 
     xs: xs,
 
@@ -20,7 +22,7 @@ module.exports = {
     additionalSources: {},
     firstSources: {},
     secondSources: {},
-    
+
     add$: xs.empty(),
 
     Task() {},

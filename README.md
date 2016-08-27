@@ -198,7 +198,7 @@ If your app is using other stream library than xstream, you should import the fa
 ```js
 import {makeCollection} from '@cycle/collection';
 import rxjsAdapter from '@cycle/rxjs-adapter';
-// OR import rxAdapter from '@cycle/rs-adapter';
+// OR import rxAdapter from '@cycle/rx-adapter';
 // OR import mostAdapter from '@cycle/most-adapter';
 
 const Collection = makeCollection(rxjsAdapter);

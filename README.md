@@ -189,3 +189,19 @@ There are kinds of sinks that rather represent actions than states. HTTP sink is
 ```js
 const tasksRequest$ = Collection.merge(tasks$, item => item.HTTP);
 ```
+
+Diversity
+---
+
+If your app is using other stream library than xstream, you should import the factory function that will take care of adapting the stream between you app and the library.
+
+```js
+import {makeCollection} from '@cycle/collection';
+import rxjsAdapter from '@cycle/rxjs-adapter';
+// OR import rxAdapter from '@cycle/rs-adapter';
+// OR import mostAdapter from '@cycle/most-adapter';
+
+const Collection = makeCollection(rxjsAdapter);
+```
+
+Importing `Collection` directly is the same as calling `makeCollection()` or `makeCollection(xsAdapter)`.

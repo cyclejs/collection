@@ -28,11 +28,13 @@
   },
   "dependencies": {
     "@cycle/isolate": "^1.4.0",
+    "@cycle/xstream-adapter": "^3.0.3",
     "xstream": "^5.1.0"
   },
   "devDependencies": {
     "@cycle/dom": "^10.0.4",
     "@cycle/http": "^9.0.2",
+    "@cycle/rxjs-adapter": "^3.0.2",
     "@cycle/xstream-run": "^3.0.3",
     "babel-cli": "^6.2.0",
     "babel-core": "^6.2.1",
@@ -56,6 +58,7 @@
     "markdown-doctest": "^0.8.0",
     "method-override": "^2.3.6",
     "mocha": "^2.4.5",
+    "rxjs": "^5.0.0-beta.11",
     "uglifyify": "^3.0.1"
   }
 }

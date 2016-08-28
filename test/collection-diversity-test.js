@@ -1,7 +1,10 @@
 /* globals describe, it */
 import assert from 'assert';
-import xs from 'xstream';
-import Collection from '../src/collection';
+import {Observable as O} from 'rxjs';
+import rxjsAdapter from '@cycle/rxjs-adapter';
+import {makeCollection} from '../src/collection';
+
+const Collection = makeCollection(rxjsAdapter);
 
 function Widget ({props$}) {
   return {
@@ -9,16 +12,16 @@ function Widget ({props$}) {
   };
 }
 
-describe('Collection', () => {
+describe('Collection with different stream libs', () => {
 
   it('takes an object of sources to pass to each item', (done) => {
-    const props$ = xs.empty();
+    const props$ = O.empty();
 
-    const collection$ = Collection(Widget, {props$}, xs.of(null));
+    const collection$ = Collection(Widget, {props$}, O.of(null));
 
     const expected = [[], [props$]];
 
-    collection$.take(expected.length).addListener({
+    collection$.take(expected.length).subscribe({
       next (items) {
         const expectedItems = expected.shift();
         assert.equal(items.length, expectedItems.length);
@@ -36,12 +39,12 @@ describe('Collection', () => {
   });
 
   it('is immutable', (done) => {
-    const collection$ = Collection(Widget, {}, xs.of(null, null, null));
+    const collection$ = Collection(Widget, {}, O.of(null, null, null));
 
     const expected = [0, 1, 2, 3];
     const real = [];
 
-    collection$.take(expected.length).addListener({
+    collection$.take(expected.length).subscribe({
       next (items) {
         real.push(items);
 
@@ -58,11 +61,11 @@ describe('Collection', () => {
   });
 
   it('adds multiple items at once', (done) => {
-    const collection$ = Collection(Widget, {}, xs.of(null, [null, null]));
+    const collection$ = Collection(Widget, {}, O.of(null, [null, null]));
 
     const expected = [0, 1, 3];
 
-    collection$.take(expected.length).addListener({
+    collection$.take(expected.length).subscribe({
       next (items) {
         assert.equal(items.length, expected.shift());
       },
@@ -75,13 +78,13 @@ describe('Collection', () => {
   });
 
   it('takes an object of additional sources to be passed to the item', (done) => {
-    const props$ = xs.empty();
+    const props$ = O.empty();
 
-    const collection$ = Collection(Widget, {}, xs.of({props$}));
+    const collection$ = Collection(Widget, {}, O.of({props$}));
 
     const expected = [[], [props$]]
 
-    collection$.take(expected.length).addListener({
+    collection$.take(expected.length).subscribe({
       next (items) {
         const expectedItems = expected.shift();
         assert.equal(items.length, expectedItems.length);
@@ -105,13 +108,13 @@ describe('Collection', () => {
       };
     }
 
-    const props$ = xs.periodic(100).take(1);
+    const props$ = O.interval(100).take(1);
 
-    const collection$ = Collection(Destroyable, {}, xs.of({props$}), item => item.destroy$);
+    const collection$ = Collection(Destroyable, {}, O.of({props$}), item => item.destroy$);
 
     const expected = [0, 1, 0];
 
-    collection$.take(expected.length).addListener({
+    collection$.take(expected.length).subscribe({
       next (items) {
         assert.equal(items.length, expected.shift());
       },
@@ -130,14 +133,14 @@ describe('Collection', () => {
       };
     }
 
-    const props$ = xs.periodic(100);
+    const props$ = O.interval(100);
 
-    const collection$ = Collection(Destroyable, {}, xs.of({props$}), item => item.destroy$);
+    const collection$ = Collection(Destroyable, {}, O.of({props$}), item => item.destroy$);
 
     const expected = [0, 1, 0];
     let completed = false;
 
-    collection$.take(expected.length).addListener({
+    collection$.take(expected.length).subscribe({
       next (items) {
         assert.equal(items.length, expected.shift());
       },

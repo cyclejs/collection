@@ -135,7 +135,7 @@ Normally, to solve this problem you would need to create a circular reference be
 When you create a `Collection` you can optionally pass a `removeSelector` function that returns a stream which will trigger item's removal.
 
 ```js
-const todoListItems = Collection(TodoListItem, sources, add$, item => item.remove$);
+const todoListItems$ = Collection(TodoListItem, sources, add$, item => item.remove$);
 ```
 
 All together now!

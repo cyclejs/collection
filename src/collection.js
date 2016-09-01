@@ -18,7 +18,7 @@ function id () {
 function makeItem (component, sources) {
   const newId = id();
 
-  const newItem = isolate(component, newId.toString())(sources);
+  const newItem = isolate(component, component.name + newId.toString())(sources);
 
   newItem._id = newId;
   newItem._name = component.name;

@@ -7,9 +7,10 @@
     "lib/"
   ],
   "scripts": {
-    "start": "babel-node examples/todolist/server.js",
+    "start": "babel-node examples/server.js",
     "start/trello": "babel-node examples/trello/server.js",
     "start/taskrunner": "babel-node examples/taskrunner/server.js",
+    "start/filter": "babel-node examples/filter/server.js",
     "test": "npm run test/node && npm run test/docs && npm run test/lint",
     "test/node": "mocha --compilers js:babel-core/register",
     "test/node-auto": "mocha --compilers js:babel-core/register --watch -R Min",
@@ -45,6 +46,7 @@
     "browserify-hmr": "^0.3.1",
     "browserify-middleware": "^7.0.0",
     "budo": "^6.1.0",
+    "bulkify": "^1.4.2",
     "cors": "^2.7.1",
     "cycle-restart": "^0.0.14",
     "eslint": "^2.13.0",

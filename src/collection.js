@@ -1,5 +1,4 @@
 import xs from 'xstream';
-import delay from 'xstream/extra/delay';
 import dropRepeats from 'xstream/extra/dropRepeats';
 import isolate from '@cycle/isolate';
 import xsAdapter from '@cycle/xstream-adapter';
@@ -181,7 +180,7 @@ function makeCollection (externalSA = xsAdapter) {
         );
       // if an item isn't present if a new snapshot, it shall be destroyed
       const _destroy$ = itemStateInfinite$.filter(item => !item).take(1);
-      const itemState$ = itemStateInfinite$.endWhen(_destroy$.compose(delay()));
+      const itemState$ = itemStateInfinite$.endWhen(_destroy$);
 
       return Object.keys(addedItem)
         .reduce((sources, key) => {

@@ -120,7 +120,7 @@ export default function TaskRunner ({DOM, HTTP}) {
     DOM.select('.show-running').events('click').mapTo(complete => !complete)
   ).startWith(() => true);
 
-  const tasksState$ = HTTP.response$$
+  const tasksState$ = HTTP.select()
     .flatten()
     .map(({text}) =>
       JSON.parse(text)

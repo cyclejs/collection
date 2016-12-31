@@ -75,7 +75,7 @@ function makeCollection (externalSA = xsAdapter) {
       }
     });
     const removeReducer$ = removeProxy$.map(item => collection => collection.remove(item));
-    const reducer$ = xs.merge(addReducer$, removeReducer$);
+    const reducer$ = xs.merge(removeReducer$, addReducer$);
 
     const emptyCollection = collection({ component, sources, removeSelector });
     const collection$ = reducer$

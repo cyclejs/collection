@@ -1,5 +1,5 @@
 /* globals describe, it */
-import assert from 'assert';
+import * as assert from 'assert';
 import {Observable as O} from 'rxjs';
 import rxjsAdapter from '@cycle/rxjs-adapter';
 import {makeCollection} from '../src/collection';
@@ -13,7 +13,6 @@ function Widget ({props$}) {
 }
 
 describe('Collection with different stream libs', () => {
-
   it('takes an object of sources to pass to each item', (done) => {
     const props$ = O.empty();
 
@@ -30,7 +29,7 @@ describe('Collection with different stream libs', () => {
           assert.equal(item.state$, expectedItems.shift());
         });
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -52,7 +51,7 @@ describe('Collection with different stream libs', () => {
           assert.equal(items.length, expected[i]);
         });
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(real.length, expected.length);
         done();
@@ -69,7 +68,7 @@ describe('Collection with different stream libs', () => {
       next (items) {
         assert.equal(items.length, expected.shift());
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -82,7 +81,7 @@ describe('Collection with different stream libs', () => {
 
     const collection$ = Collection(Widget, {}, O.of({props$}));
 
-    const expected = [[], [props$]]
+    const expected = [[], [props$]];
 
     collection$.take(expected.length).subscribe({
       next (items) {
@@ -93,7 +92,7 @@ describe('Collection with different stream libs', () => {
           assert.equal(item.state$, expectedItems.shift());
         });
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -118,7 +117,7 @@ describe('Collection with different stream libs', () => {
       next (items) {
         assert.equal(items.length, expected.shift());
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -144,7 +143,7 @@ describe('Collection with different stream libs', () => {
       next (items) {
         assert.equal(items.length, expected.shift());
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         completed = true;
       }

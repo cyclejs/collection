@@ -1,5 +1,5 @@
 /* globals describe, it */
-import assert from 'assert';
+import * as assert from 'assert';
 import {Observable as O} from 'rxjs';
 import rxjsAdapter from '@cycle/rxjs-adapter';
 import {makeCollection} from '../src/collection';
@@ -15,8 +15,8 @@ function Widget ({props}) {
 describe('Collection.gather with different stream libs', () => {
   it('adds initial items', (done) => {
     const itemState$ = O.of([
-      { id: 0, props: {foo: 'bar'}},
-      { id: 1, props: {baz: 'quix'}}
+      {id: 0, props: {foo: 'bar'}},
+      {id: 1, props: {baz: 'quix'}}
     ]);
     const collection$ = Collection.gather(Widget, {}, itemState$);
 
@@ -39,14 +39,14 @@ describe('Collection.gather with different stream libs', () => {
             next (val) {
               assert.deepEqual(val, expectedItem.shift());
             },
-            error (err) {done(err)},
+            error (err) { done(err); },
             complete () {
               assert.equal(expectedItem.length, 0);
             }
           });
         });
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -56,10 +56,9 @@ describe('Collection.gather with different stream libs', () => {
 
   it('tracks item\'s state by id', (done) => {
     const itemState$ = O.of([
-      { id: 0, props: {foo: 'bar'}}
-    ],
-    [
-      { id: 0, props: {baz: 'quix'}}
+      {id: 0, props: {foo: 'bar'}}
+    ], [
+      {id: 0, props: {baz: 'quix'}}
     ]);
     const collection$ = Collection.gather(Widget, {}, itemState$);
 
@@ -81,14 +80,14 @@ describe('Collection.gather with different stream libs', () => {
             next (val) {
               assert.deepEqual(val, expectedItem.shift());
             },
-            error (err) {done(err)},
+            error (err) { done(err); },
             complete () {
               assert.equal(expectedItem.length, 0);
             }
           });
         });
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -98,11 +97,10 @@ describe('Collection.gather with different stream libs', () => {
 
   it('adds new appearing items', (done) => {
     const itemState$ = O.of([
-      { id: 0, props: {foo: 'bar'}}
-    ],
-    [
-      { id: 0, props: {foo: 'bar'}},
-      { id: 1, props: {baz: 'quix'}}
+      {id: 0, props: {foo: 'bar'}}
+    ], [
+      {id: 0, props: {foo: 'bar'}},
+      {id: 1, props: {baz: 'quix'}}
     ]);
     const collection$ = Collection.gather(Widget, {}, itemState$);
 
@@ -128,14 +126,14 @@ describe('Collection.gather with different stream libs', () => {
             next (val) {
               assert.deepEqual(val, expectedItem.shift());
             },
-            error (err) {done(err)},
+            error (err) { done(err); },
             complete () {
               assert.equal(expectedItem.length, 0);
             }
           });
         });
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -145,11 +143,10 @@ describe('Collection.gather with different stream libs', () => {
 
   it('removes the items that are no more present', (done) => {
     const itemState$ = O.of([
-      { id: 0, props: {foo: 'bar'}},
-      { id: 1, props: {baz: 'quix'}}
-    ],
-    [
-      { id: 0, props: {foo: 'bar'}}
+      {id: 0, props: {foo: 'bar'}},
+      {id: 1, props: {baz: 'quix'}}
+    ], [
+      {id: 0, props: {foo: 'bar'}}
     ]);
     const collection$ = Collection.gather(Widget, {}, itemState$);
 
@@ -175,14 +172,14 @@ describe('Collection.gather with different stream libs', () => {
             next (val) {
               assert.deepEqual(val, expectedItem.shift());
             },
-            error (err) {done(err)},
+            error (err) { done(err); },
             complete () {
               assert.equal(expectedItem.length, 0);
             }
           });
         });
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();

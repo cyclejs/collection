@@ -1,5 +1,5 @@
 /* globals describe, it */
-import assert from 'assert';
+import * as assert from 'assert';
 import {Observable as O} from 'rxjs';
 import rxjsAdapter from '@cycle/rxjs-adapter';
 import {makeCollection} from '../src/collection';
@@ -33,7 +33,7 @@ describe('Collection.merge with different stream libs', () => {
         assert.deepEqual(val, expected.shift());
       },
       error (err) {
-        done(err)
+        done(err);
       },
       complete () {
         assert.equal(expected.length, 0);

@@ -1,5 +1,5 @@
 /* globals describe, it */
-import assert from 'assert';
+import * as assert from 'assert';
 import xs from 'xstream';
 import Collection from '../src/collection';
 
@@ -30,7 +30,7 @@ describe('Collection.merge', () => {
         assert.deepEqual(val, expected.shift());
       },
       error (err) {
-        done(err)
+        done(err);
       },
       complete () {
         assert.equal(expected.length, 0);

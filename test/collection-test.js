@@ -1,5 +1,5 @@
 /* globals describe, it */
-import assert from 'assert';
+import * as assert from 'assert';
 import xs from 'xstream';
 import Collection from '../src/collection';
 
@@ -10,7 +10,6 @@ function Widget ({props$}) {
 }
 
 describe('Collection', () => {
-
   it('takes an object of sources to pass to each item', (done) => {
     const props$ = xs.empty();
 
@@ -27,7 +26,7 @@ describe('Collection', () => {
           assert.equal(item.state$, expectedItems.shift());
         });
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -49,7 +48,7 @@ describe('Collection', () => {
           assert.equal(items.length, expected[i]);
         });
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(real.length, expected.length);
         done();
@@ -66,7 +65,7 @@ describe('Collection', () => {
       next (items) {
         assert.equal(items.length, expected.shift());
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -79,7 +78,7 @@ describe('Collection', () => {
 
     const collection$ = Collection(Widget, {}, xs.of({props$}));
 
-    const expected = [[], [props$]]
+    const expected = [[], [props$]];
 
     collection$.take(expected.length).addListener({
       next (items) {
@@ -90,7 +89,7 @@ describe('Collection', () => {
           assert.equal(item.state$, expectedItems.shift());
         });
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -115,7 +114,7 @@ describe('Collection', () => {
       next (items) {
         assert.equal(items.length, expected.shift());
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();
@@ -141,7 +140,7 @@ describe('Collection', () => {
       next (items) {
         assert.equal(items.length, expected.shift());
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         completed = true;
       }

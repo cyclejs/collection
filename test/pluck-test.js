@@ -1,5 +1,5 @@
 /* globals describe, it */
-import assert from 'assert';
+import * as assert from 'assert';
 import xs from 'xstream';
 import Collection from '../src/collection';
 
@@ -31,7 +31,7 @@ describe('Collection.pluck', () => {
       next (val) {
         assert.deepEqual(val, expected.shift());
       },
-      error (err) {done(err)},
+      error (err) { done(err); },
       complete () {
         assert.equal(expected.length, 0);
         done();

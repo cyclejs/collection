@@ -186,4 +186,22 @@ describe('Collection.gather with different stream libs', () => {
       }
     });
   });
+
+  it('uses transformKey function to transform source keys', (done) => {
+    const itemState$ = O.of([
+      {id: 0, props: {foo: 'bar'}}
+    ]);
+
+    function MockedComponent (sources) {
+      assert.ok(sources.props$);
+      done();
+    }
+
+    const collection$ = Collection.gather(MockedComponent, {}, itemState$, 'id', key => `${key}$`);
+    collection$.subscribe({
+      next () {},
+      error (err) { done(err); },
+      complete () {}
+    });
+  });
 });

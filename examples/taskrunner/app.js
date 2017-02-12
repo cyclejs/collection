@@ -27,7 +27,7 @@ function taskView ([{status, text}, editing]) {
   );
 }
 
-function Task ({DOM, props}) {
+function Task ({DOM, props$}) {
   const delete$ = DOM
     .select('.delete')
     .events('click');
@@ -47,11 +47,11 @@ function Task ({DOM, props}) {
   const edit$ = editing$.map(editing => changeText$.filter(() => editing)).flatten();
 
   return {
-    DOM: xs.combine(props, editing$).map(taskView),
-    complete$: props.map(({status}) => status === 'complete'),
+    DOM: xs.combine(props$, editing$).map(taskView),
+    complete$: props$.map(({status}) => status === 'complete'),
     delete$,
     edit$,
-    HTTP: props.map(({id}) => ({
+    HTTP: props$.map(({id}) => ({
       url: `/tasks/${id}`
     }))
   };
@@ -131,7 +131,7 @@ export default function TaskRunner ({DOM, HTTP}) {
     )
     .startWith([]);
 
-  const tasks$ = Collection.gather(Task, {DOM}, tasksState$);
+  const tasks$ = Collection.gather(Task, {DOM}, tasksState$, 'id', key => `${key}$`);
 
   const addTaskClick$ = DOM
     .select('.add-task')

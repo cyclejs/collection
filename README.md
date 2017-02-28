@@ -168,10 +168,10 @@ function TodoList (sources) {
 And how do we process fetched data?
 ---
 
-It's a quite common use case when a collection is built from fetched data. Usually it comes in a form of items' state snapshot. `Collection.gather` takes a stream of those snapshots and turns into a stream of collections. It takes `Collection` and `sources` arguments, just as `Collection` does, plus `itemState$` and an optional `idAttribute` argument, which defaults to `'id'`.
+It's a quite common use case when a collection is built from fetched data. Usually it comes in a form of items' state snapshot. `Collection.gather` takes a stream of those snapshots and turns into a stream of collections. It takes `Collection` and `sources` arguments, just as `Collection` does, plus the snapshots stream `itemState$`, an optional `idAttribute` argument, which defaults to `'id'`, and an optional `transformKey` function for converting source keys.
 
 ```js
-const tasks$ = Collection.gather(Task, sources, fetchedTasks$, 'uid')
+const tasks$ = Collection.gather(Task, sources, fetchedTasks$, 'uid', key => `${key}$`) // converts 'props' in snapshots to 'props$' in sources
 ```
 
 It uses a set of rules:

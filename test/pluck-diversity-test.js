@@ -1,10 +1,9 @@
 /* globals describe, it */
 import * as assert from 'assert';
 import {Observable as O} from 'rxjs';
-import rxjsAdapter from '@cycle/rxjs-adapter';
 import {makeCollection} from '../src/collection';
 
-const Collection = makeCollection(rxjsAdapter);
+const Collection = makeCollection();
 
 function Widget ({props$}) {
   return {

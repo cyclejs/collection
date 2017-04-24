@@ -17,7 +17,7 @@
     "test/docs-auto": "watch -c markdown-doctest",
     "test/lint": "eslint src/**/*.js examples/**/*.js test/**/*.js",
     "bundle": "browserify index.js -t babelify -t uglifyify -o bundle.js",
-    "precompile-lib": "rm -rf lib/ && mkdir -p lib",
+    "precompile-lib": "node scripts/precompile-lib.js",
     "compile-lib": "babel src -d lib",
     "prepublish": "npm run compile-lib"
   },
@@ -53,6 +53,7 @@
     "eslint-plugin-promise": "^3.4.0",
     "eslint-plugin-standard": "^2.0.1",
     "express": "^4.13.4",
+    "fs-extra": "^2.1.2",
     "markdown-doctest": "^0.9.1",
     "method-override": "^2.3.6",
     "mocha": "^3.2.0",

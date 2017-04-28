@@ -42,7 +42,7 @@ It's common in Cycle that you want to pass your `sources` to your children. You 
 const todoListItems$ = Collection(TodoListItem, sources);
 ```
 
-To actually populate the collection, you pass an `add$` stream. Its emitted values may be sources objects, which will be merged with the sources object you passed when you created the `collection$`. This is useful for passing `props$`.
+To actually populate the collection, you pass an `add$` stream. Its emitted values may be sources objects, which will be merged with the sources object you passed when you created the `collection$`. This is useful for passing `props$`. For Collection versions 0.6.0+ (based on Cycle Unified), any stream type supported by Cycle.js should work automatically. See the [old README](https://github.com/cyclejs/collection/tree/47e988ba5bf19d2a8172aba1f581200335f46b70#diversity) if you are older versions of Cycle.js (Cycle.js Diversity).
 
 ```js
 const todoListItems$ = Collection(TodoListItem, sources, xs.of(additionalSources));
@@ -190,18 +190,4 @@ There are kinds of sinks that rather represent actions than states. HTTP sink is
 const tasksRequest$ = Collection.merge(tasks$, item => item.HTTP);
 ```
 
-Diversity
----
-
-If your app is using other stream library than xstream, you should import the factory function that will take care of adapting the stream between you app and the library.
-
-```js
-import {makeCollection} from '@cycle/collection';
-import rxjsAdapter from '@cycle/rxjs-adapter';
-// OR import rxAdapter from '@cycle/rx-adapter';
-// OR import mostAdapter from '@cycle/most-adapter';
-
-const Collection = makeCollection(rxjsAdapter);
-```
-
-Importing `Collection` directly is the same as calling `makeCollection()` or `makeCollection(xsAdapter)`.
+Importing `Collection` directly is the same as calling `makeCollection()`.

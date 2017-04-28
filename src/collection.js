@@ -1,7 +1,7 @@
 import xs from 'xstream';
 import dropRepeats from 'xstream/extra/dropRepeats';
 import isolate from '@cycle/isolate';
-import xsAdapter from '@cycle/xstream-adapter';
+import {adapt} from '@cycle/run/lib/adapt';
 
 const noop = Function.prototype;
 
@@ -26,13 +26,7 @@ function makeItem (component, sources) {
   return newItem;
 }
 
-function convert (stream, sourceSA, targetSA) {
-  return targetSA.isValidStream(stream)
-    ? stream
-    : targetSA.adapt(stream, sourceSA.streamSubscribe);
-}
-
-function makeCollection (externalSA = xsAdapter) {
+function makeCollection () {
   function collection (options, items = []) {
     const { component, sources, removeSelector } = options;
 
@@ -40,7 +34,7 @@ function makeCollection (externalSA = xsAdapter) {
       add (additionalSources = {}) {
         const newItem = makeItem(component, {...sources, ...additionalSources});
         const selectedSink = removeSelector(newItem) || xs.empty();
-        const removeSink = convert(selectedSink, externalSA, xsAdapter);
+        const removeSink = adapt(xs.fromObservable(selectedSink));
         newItem._remove$ = removeSink.take(1).mapTo(newItem);
 
         return collection(
@@ -64,7 +58,7 @@ function makeCollection (externalSA = xsAdapter) {
 
   function Collection (component, sources = {}, sourceAdd$ = xs.empty(), removeSelector = noop) {
     const removeProxy$ = xs.create();
-    const add$ = convert(sourceAdd$, externalSA, xsAdapter);
+    const add$ = adapt(xs.fromObservable(sourceAdd$));
     const addReducer$ = add$.map(sourcesList => collection => {
       if (Array.isArray(sourcesList)) {
         // multiple items
@@ -85,7 +79,7 @@ function makeCollection (externalSA = xsAdapter) {
     const remove$ = Collection.merge(collection$, item => item._remove$, true);
     removeProxy$.imitate(remove$);
 
-    return convert(collection$, xsAdapter, externalSA);
+    return adapt(xs.fromObservable(collection$));
   }
 
   Collection.pluck = function pluck (sourceCollection$, pluckSelector) {
@@ -95,7 +89,7 @@ function makeCollection (externalSA = xsAdapter) {
       const key = item._id;
 
       if (sinks[key] === undefined) {
-        const selectedSink = convert(pluckSelector(item), externalSA, xsAdapter);
+        const selectedSink = adapt(xs.fromObservable(pluckSelector(item)));
         const sink = selectedSink.map(x =>
           isVtree(x) && x.key == null ? {...x, key} : x
         );
@@ -105,13 +99,13 @@ function makeCollection (externalSA = xsAdapter) {
       return sinks[key];
     }
 
-    const collection$ = convert(sourceCollection$, externalSA, xsAdapter);
+    const collection$ = adapt(xs.fromObservable(sourceCollection$));
     const outputCollection$ = collection$
       .map(items => items.map(item => sink$(item)))
       .map(sinkStreams => xs.combine(...sinkStreams))
       .flatten()
       .startWith([]);
-    return convert(outputCollection$, xsAdapter, externalSA);
+    return adapt(xs.fromObservable(outputCollection$));
   };
 
   Collection.merge = function merge (sourceCollection$, mergeSelector, internal = false) {
@@ -121,7 +115,7 @@ function makeCollection (externalSA = xsAdapter) {
       const key = item._id;
 
       if (sinks[key] === undefined) {
-        const selectedSink = convert(mergeSelector(item), externalSA, xsAdapter);
+        const selectedSink = adapt(xs.fromObservable(mergeSelector(item)));
         const sink = selectedSink.map(x =>
           isVtree(x) && x.key == null ? {...x, key} : x
         );
@@ -132,14 +126,14 @@ function makeCollection (externalSA = xsAdapter) {
       return sinks[key];
     }
 
-    const collection$ = convert(sourceCollection$, externalSA, xsAdapter);
+    const collection$ = adapt(xs.fromObservable(sourceCollection$));
     const outputCollection$ = collection$
       .map(items => items.map(item => sink$(item)))
       .map(sinkStreams => xs.merge(...sinkStreams))
       .flatten();
     return internal
       ? outputCollection$
-      : convert(outputCollection$, xsAdapter, externalSA);
+      : adapt(xs.fromObservable(outputCollection$));
   };
 
   // convert a stream of items' sources snapshots into a stream of collections
@@ -200,14 +194,14 @@ function makeCollection (externalSA = xsAdapter) {
 
           return {
             ...sources,
-            [sourceKey]: convert(stream$, xsAdapter, externalSA)
+            [sourceKey]: adapt(xs.fromObservable(stream$))
           };
         }, {
           _destroy$
         });
     }
 
-    const items$ = convert(sourceItems$, externalSA, xsAdapter);
+    const items$ = adapt(xs.fromObservable(sourceItems$));
     const itemsState$ = items$.remember();
 
     const add$ = itemsState$

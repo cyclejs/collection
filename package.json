@@ -17,7 +17,7 @@
     "test/docs-auto": "watch -c markdown-doctest",
     "test/lint": "eslint src/**/*.js examples/**/*.js test/**/*.js",
     "bundle": "browserify index.js -t babelify -t uglifyify -o bundle.js",
-    "precompile-lib": "rm -rf lib/ && mkdir -p lib",
+    "precompile-lib": "node scripts/precompile-lib.js",
     "compile-lib": "babel src -d lib",
     "prepublish": "npm run compile-lib"
   },
@@ -27,15 +27,13 @@
     "access": "public"
   },
   "dependencies": {
-    "@cycle/isolate": "^1.4.0",
-    "@cycle/xstream-adapter": "^3.0.3",
-    "xstream": "^9.2.0"
+    "@cycle/isolate": "^2.1.0",
+    "xstream": "^10.5.0"
   },
   "devDependencies": {
-    "@cycle/dom": "^14.2.0",
-    "@cycle/http": "^11.2.0",
-    "@cycle/rxjs-adapter": "^3.0.2",
-    "@cycle/xstream-run": "^4.1.0",
+    "@cycle/dom": "^17.1.0",
+    "@cycle/http": "^13.2.0",
+    "@cycle/run": "^3.1.0",
     "babel-cli": "^6.2.0",
     "babel-core": "^6.2.1",
     "babel-plugin-transform-object-rest-spread": "^6.8.0",
@@ -55,6 +53,7 @@
     "eslint-plugin-promise": "^3.4.0",
     "eslint-plugin-standard": "^2.0.1",
     "express": "^4.13.4",
+    "fs-extra": "^2.1.2",
     "markdown-doctest": "^0.9.1",
     "method-override": "^2.3.6",
     "mocha": "^3.2.0",

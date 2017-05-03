@@ -34,7 +34,7 @@ function makeCollection () {
       add (additionalSources = {}) {
         const newItem = makeItem(component, {...sources, ...additionalSources});
         const selectedSink = removeSelector(newItem) || xs.empty();
-        const removeSink = adapt(xs.fromObservable(selectedSink));
+        const removeSink = xs.fromObservable(selectedSink);
         newItem._remove$ = removeSink.take(1).mapTo(newItem);
 
         return collection(
@@ -58,7 +58,7 @@ function makeCollection () {
 
   function Collection (component, sources = {}, sourceAdd$ = xs.empty(), removeSelector = noop) {
     const removeProxy$ = xs.create();
-    const add$ = adapt(xs.fromObservable(sourceAdd$));
+    const add$ = xs.fromObservable(sourceAdd$);
     const addReducer$ = add$.map(sourcesList => collection => {
       if (Array.isArray(sourcesList)) {
         // multiple items
@@ -79,7 +79,7 @@ function makeCollection () {
     const remove$ = Collection.merge(collection$, item => item._remove$, true);
     removeProxy$.imitate(remove$);
 
-    return adapt(xs.fromObservable(collection$));
+    return adapt(collection$);
   }
 
   Collection.pluck = function pluck (sourceCollection$, pluckSelector) {
@@ -89,7 +89,7 @@ function makeCollection () {
       const key = item._id;
 
       if (sinks[key] === undefined) {
-        const selectedSink = adapt(xs.fromObservable(pluckSelector(item)));
+        const selectedSink = xs.fromObservable(pluckSelector(item));
         const sink = selectedSink.map(x =>
           isVtree(x) && x.key == null ? {...x, key} : x
         );
@@ -99,13 +99,13 @@ function makeCollection () {
       return sinks[key];
     }
 
-    const collection$ = adapt(xs.fromObservable(sourceCollection$));
+    const collection$ = xs.fromObservable(sourceCollection$);
     const outputCollection$ = collection$
       .map(items => items.map(item => sink$(item)))
       .map(sinkStreams => xs.combine(...sinkStreams))
       .flatten()
       .startWith([]);
-    return adapt(xs.fromObservable(outputCollection$));
+    return adapt(outputCollection$);
   };
 
   Collection.merge = function merge (sourceCollection$, mergeSelector, internal = false) {
@@ -115,7 +115,7 @@ function makeCollection () {
       const key = item._id;
 
       if (sinks[key] === undefined) {
-        const selectedSink = adapt(xs.fromObservable(mergeSelector(item)));
+        const selectedSink = xs.fromObservable(mergeSelector(item));
         const sink = selectedSink.map(x =>
           isVtree(x) && x.key == null ? {...x, key} : x
         );
@@ -126,14 +126,14 @@ function makeCollection () {
       return sinks[key];
     }
 
-    const collection$ = adapt(xs.fromObservable(sourceCollection$));
+    const collection$ = xs.fromObservable(sourceCollection$);
     const outputCollection$ = collection$
       .map(items => items.map(item => sink$(item)))
       .map(sinkStreams => xs.merge(...sinkStreams))
       .flatten();
     return internal
       ? outputCollection$
-      : adapt(xs.fromObservable(outputCollection$));
+      : adapt(outputCollection$);
   };
 
   // convert a stream of items' sources snapshots into a stream of collections
@@ -194,14 +194,14 @@ function makeCollection () {
 
           return {
             ...sources,
-            [sourceKey]: adapt(xs.fromObservable(stream$))
+            [sourceKey]: adapt(stream$)
           };
         }, {
           _destroy$
         });
     }
 
-    const items$ = adapt(xs.fromObservable(sourceItems$));
+    const items$ = xs.fromObservable(sourceItems$);
     const itemsState$ = items$.remember();
 
     const add$ = itemsState$

@@ -1,7 +1,8 @@
-/* globals describe, it */
+/* globals describe, it, beforeEach, afterEach */
 import * as assert from 'assert';
 import {Observable as O} from 'rxjs';
 import {makeCollection} from '../src/collection';
+import {setAdapt} from '@cycle/run/lib/adapt';
 
 const Collection = makeCollection();
 
@@ -12,6 +13,21 @@ function Widget ({props$}) {
 }
 
 describe('Collection.pluck with different stream libs', () => {
+  beforeEach(function () {
+    setAdapt(O.from);
+  });
+
+  afterEach(function () {
+    setAdapt(x => x);
+  });
+
+  it('should return adapted stream', (done) => {
+    const collection$ = Collection(Widget, {});
+    const states$ = Collection.pluck(collection$, item => item.state$);
+    assert.equal(typeof states$.let, 'function');
+    done();
+  });
+
   it('handles adding items', (done) => {
     const props$ = O.never().startWith({foo: 'bar'});
 

@@ -1,4 +1,6 @@
 # cycle-collections
+But Onionify offers similar API and more
+---
 An easier way to do collections in Cycle
 
 Components can be hard to manage in Cycle.js. They can be especially painful when you're working with lists of components.

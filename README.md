@@ -1,5 +1,5 @@
 # cycle-collections
-But Onionify offers similar API and more
+Collection is no longer actively maintained. We recommend you check out onionify.
 ---
 An easier way to do collections in Cycle
 

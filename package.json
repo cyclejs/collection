@@ -27,7 +27,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@cycle/isolate": "^2.1.0",
+    "@cycle/isolate": "^4.2.0",
     "xstream": "^10.5.0"
   },
   "devDependencies": {

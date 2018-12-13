@@ -1,6 +1,7 @@
 # cycle-collections
-Collection is no longer actively maintained. We recommend you check out onionify.
+Collection is no longer actively maintained. We recommend you check out [@cycle/state](https://cycle.js.org/api/state.html)
 ---
+
 An easier way to do collections in Cycle
 
 Components can be hard to manage in Cycle.js. They can be especially painful when you're working with lists of components.

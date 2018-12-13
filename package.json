@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@cycle/isolate": "^4.2.0",
-    "xstream": "^10.5.0"
+    "xstream": "^11.7.0"
   },
   "devDependencies": {
     "@cycle/dom": "^17.1.0",

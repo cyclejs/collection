@@ -23,15 +23,27 @@
     "@types/superagent" "2.0.36"
     superagent "3.4.1"
 
-"@cycle/isolate@^2.1.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@cycle/isolate/-/isolate-2.1.0.tgz#8db1c6a068dc1d3fc709d5adbe838083577ad0e0"
+"@cycle/isolate@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@cycle/isolate/-/isolate-4.2.0.tgz#8e76980556dedfc92415c6f0487f3dcd078d9e17"
+  integrity sha512-I11AOSaKIIuh5Ww08BRO9pZiqi5HxtQUM2eFMOAkwDyjlLfuzqvZKSg61NWJfl/RPAgcMwgDo1tbExSr3nI+NA==
+  dependencies:
+    "@cycle/run" "^5.2.0"
+    xstream "^11.7.0"
 
 "@cycle/run@*", "@cycle/run@^3.1.0":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@cycle/run/-/run-3.1.0.tgz#76df582a501d2d1b871f8f6decf263afae090384"
   dependencies:
     xstream "10.x"
+
+"@cycle/run@^5.2.0":
+  version "5.2.0"
+  resolved "https://registry.yarnpkg.com/@cycle/run/-/run-5.2.0.tgz#08924714d9ae7fa9260d59c1f995095596a884bc"
+  integrity sha512-FTXtJ13I8MkBo7BGBH6S41/vt/Z/s23ZjyhmyTrFGCFxBH5rtIJGcuVPwbSVRlpjFq7G2Vjxd585u+0kANhNvA==
+  dependencies:
+    quicktask "1.1.0"
+    xstream "10.x || 11.x"
 
 "@types/node@*":
   version "7.0.13"
@@ -3564,6 +3576,11 @@ querystring@0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/querystring/-/querystring-0.2.0.tgz#b209849203bb25df820da756e747005878521620"
 
+quicktask@1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/quicktask/-/quicktask-1.1.0.tgz#70795fd5922fb122100e662118c73a06aadd7352"
+  integrity sha512-b3w19IEXnt5auacLAbePVsqPyVQUwmuhJQrrWnVhm4pP8PAMg2U9vFHbAD9XYXXbMDjdLJs0x5NLqwTV8uFK4g==
+
 randomatic@^1.1.3:
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/randomatic/-/randomatic-1.1.6.tgz#110dcabff397e9dcff7c0789ccc0a49adf1ec5bb"
@@ -4217,6 +4234,11 @@ supports-color@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-2.0.0.tgz#535d045ce6b6363fa40117084629995e9df324c7"
 
+symbol-observable@1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/symbol-observable/-/symbol-observable-1.2.0.tgz#c22688aed4eab3cdc2dfeacbb561660560a00804"
+  integrity sha512-e900nM8RRtGhlV36KGEU9k65K3mPb1WV70OdjfxlG2EAuM1noi/E/BaW/uMhL7bPEssK8QV57vN3esixjUvcXQ==
+
 symbol-observable@^1.0.1, symbol-observable@^1.0.2:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/symbol-observable/-/symbol-observable-1.0.4.tgz#29bf615d4aa7121bdd898b22d4b3f9bc4e2aa03d"
@@ -4561,11 +4583,18 @@ xmlhttprequest-ssl@1.5.3:
   version "1.5.3"
   resolved "https://registry.yarnpkg.com/xmlhttprequest-ssl/-/xmlhttprequest-ssl-1.5.3.tgz#185a888c04eca46c3e4070d99f7b49de3528992d"
 
-xstream@10.x, xstream@^10.5.0:
+xstream@10.x:
   version "10.5.0"
   resolved "https://registry.yarnpkg.com/xstream/-/xstream-10.5.0.tgz#acf7776cf86f0188e09ebaf3227d847818d1564a"
   dependencies:
     symbol-observable "^1.0.2"
+
+"xstream@10.x || 11.x", xstream@^11.7.0:
+  version "11.7.0"
+  resolved "https://registry.yarnpkg.com/xstream/-/xstream-11.7.0.tgz#6557e9710e1ab05ae28b6902af41745250d32e36"
+  integrity sha512-wO3TXiQd2/1UZNVsixDIcQgAN6TU4sGH7qIXvs1CRp1kgtkpU8YTfyKt/z/Z1psqcGnR0cJJxHaCnBxtktLx9w==
+  dependencies:
+    symbol-observable "1.2.0"
 
 "xtend@>=4.0.0 <4.1.0-0", xtend@^4.0.0, xtend@~4.0.1:
   version "4.0.1"

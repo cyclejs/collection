@@ -84,6 +84,37 @@ function TodoList (sources) {
 }
 ```
 
+### Elaboration with a TypeScript example
+
+Say you have a list of "Item" components that will be part of a "List" component, where "Item" has the following sources:
+
+```ts
+export interface Sources {
+  dom: DOMSource;
+}
+
+export interface ItemSources {
+  item$: Stream<Data>;
+}
+
+export interface ItemSourcesAll extends ItemSources, Sources {}
+```
+
+`ItemSourcesAll` is used internally by the "Item" component. In our "List" component, however, we just need to be concerned with ItemSources as Collection takes care of merging ItemSources with Sources. So in our "List" component, we might have some code that looks like this:
+
+```ts
+const itemSources$: Stream<ItemSources[]>= res$.map(res =>
+    <Data[]> JSON.parse(res.text)
+  ).map(items => items.map(item => <ItemSources> {item$: xs.of(item)}));
+```	
+
+You can now see that the type passed as the second sources argument is in fact a stream of sources. The call to Collection looks like:
+
+```ts
+  const listItems$ = Collection(Item, sources, itemSources$);
+```
+
+
 Wait, how do we get the `todoListItems` to show up in the `DOM`?
 ---
 
